@@ -1,0 +1,5 @@
+/START_HERE.html
+/HANDBOOK.md
+/figures/*.png
+__pycache__/
+.pytest_cache/

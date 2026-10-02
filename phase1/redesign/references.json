@@ -1,0 +1,220 @@
+[
+  {
+    "id": "R01",
+    "title": "A Neural Probabilistic Language Model",
+    "author_date": "Bengio et al., 2003",
+    "url": "https://jmlr.org/papers/v3/bengio03a.html",
+    "use": "Learned representations instead of exact-count generalization; historical context."
+  },
+  {
+    "id": "R02",
+    "title": "Neural Machine Translation by Jointly Learning to Align and Translate",
+    "author_date": "Bahdanau et al., 2014 preprint / ICLR 2015",
+    "url": "https://arxiv.org/abs/1409.0473",
+    "use": "Attention as a response to a fixed-vector bottleneck."
+  },
+  {
+    "id": "R03",
+    "title": "Attention Is All You Need",
+    "author_date": "Vaswani et al., 2017",
+    "url": "https://arxiv.org/html/1706.03762v7",
+    "use": "Attention equations and original encoder-decoder architecture; not a modern Llama implementation."
+  },
+  {
+    "id": "R04",
+    "title": "Improving language understanding with unsupervised learning",
+    "author_date": "OpenAI, 2018",
+    "url": "https://openai.com/index/language-unsupervised/",
+    "use": "Generative pretraining and downstream adaptation."
+  },
+  {
+    "id": "R05",
+    "title": "BERT: Pre-training of Deep Bidirectional Transformers",
+    "author_date": "Devlin et al., 2018",
+    "url": "https://arxiv.org/abs/1810.04805",
+    "use": "Contrast bidirectional representation learning with causal generation."
+  },
+  {
+    "id": "R06",
+    "title": "Language Models are Few-Shot Learners",
+    "author_date": "Brown et al., 2020",
+    "url": "https://arxiv.org/abs/2005.14165",
+    "use": "In-context task examples versus updating weights."
+  },
+  {
+    "id": "R07",
+    "title": "Training language models to follow instructions with human feedback",
+    "author_date": "Ouyang et al., 2022",
+    "url": "https://arxiv.org/abs/2203.02155",
+    "use": "Why base and instruction-following models are different artifacts."
+  },
+  {
+    "id": "R08",
+    "title": "The Annotated Transformer",
+    "author_date": "Harvard NLP, 2022 edition",
+    "url": "https://nlp.seas.harvard.edu/annotated-transformer/",
+    "use": "Equation-to-code reading technique; do not copy its full training course.",
+    "source_mirror": "https://github.com/harvardnlp/annotated-transformer/blob/master/the_annotated_transformer.py"
+  },
+  {
+    "id": "R09",
+    "title": "The Illustrated Transformer",
+    "author_date": "Jay Alammar, original tutorial",
+    "url": "https://jalammar.github.io/illustrated-transformer/",
+    "use": "Progressive visual decomposition; distinguish explanatory pictures from learned evidence."
+  },
+  {
+    "id": "R10",
+    "title": "Language Modeling from Scratch",
+    "author_date": "Stanford CS336, Spring 2025 archive",
+    "url": "https://cs336.stanford.edu/spring2025/",
+    "use": "Implement, test, profile; the full course has stronger prerequisites and a training emphasis."
+  },
+  {
+    "id": "R11",
+    "title": "Chat templates",
+    "author_date": "Hugging Face Transformers documentation, inspected 2026-10-02",
+    "url": "https://huggingface.co/docs/transformers/main/en/chat_templating",
+    "use": "Messages, serialization, control tokens and generation boundaries."
+  },
+  {
+    "id": "R12",
+    "title": "Qwen3-0.6B model card",
+    "author_date": "Qwen, inspected 2026-10-02",
+    "url": "https://huggingface.co/Qwen/Qwen3-0.6B",
+    "use": "Required demo and explicit thinking-mode configuration."
+  },
+  {
+    "id": "R13",
+    "title": "Qwen3-0.6B config.json",
+    "author_date": "Qwen, inspected 2026-10-02; floating model file",
+    "url": "https://huggingface.co/Qwen/Qwen3-0.6B/raw/main/config.json",
+    "use": "Explicit head_dim; record a local immutable model snapshot for executable evidence."
+  },
+  {
+    "id": "R14",
+    "title": "Llama-3.2-1B model card",
+    "author_date": "Meta, released September 25, 2024",
+    "url": "https://huggingface.co/meta-llama/Llama-3.2-1B",
+    "use": "Required base-model demo; this checkpoint is text-only."
+  },
+  {
+    "id": "R15",
+    "title": "GQA: Training Generalized Multi-Query Transformer Models",
+    "author_date": "Ainslie et al., 2023",
+    "url": "https://arxiv.org/abs/2305.13245",
+    "use": "Query-head and KV-head counts need not agree."
+  },
+  {
+    "id": "R16",
+    "title": "RoFormer: Enhanced Transformer with Rotary Position Embedding",
+    "author_date": "Su et al., 2021",
+    "url": "https://arxiv.org/abs/2104.09864",
+    "use": "Position-dependent rotations; configuration matters."
+  },
+  {
+    "id": "R17",
+    "title": "Root Mean Square Layer Normalization",
+    "author_date": "Zhang and Sennrich, 2019",
+    "url": "https://arxiv.org/abs/1910.07467",
+    "use": "RMSNorm is not interchangeable with LayerNorm."
+  },
+  {
+    "id": "R18",
+    "title": "GLU Variants Improve Transformer",
+    "author_date": "Shazeer, 2020",
+    "url": "https://arxiv.org/abs/2002.05202",
+    "use": "Gated feed-forward variants; avoid teaching GELU as universal."
+  },
+  {
+    "id": "R19",
+    "title": "An Image is Worth 16x16 Words",
+    "author_date": "Dosovitskiy et al., 2020 preprint / ICLR 2021",
+    "url": "https://arxiv.org/abs/2010.11929",
+    "use": "Patches as Transformer inputs; classification is not image-conditioned language generation."
+  },
+  {
+    "id": "R20",
+    "title": "Learning Transferable Visual Models From Natural Language Supervision",
+    "author_date": "Radford et al., 2021",
+    "url": "https://arxiv.org/abs/2103.00020",
+    "use": "Contrastive image-text representation learning, not an autoregressive chat decoder."
+  },
+  {
+    "id": "R21",
+    "title": "Visual Instruction Tuning",
+    "author_date": "Liu et al., 2023",
+    "url": "https://arxiv.org/abs/2304.08485",
+    "use": "Vision encoder + learned connection + LLM as a first VLM teaching example."
+  },
+  {
+    "id": "R22",
+    "title": "Orca: A Distributed Serving System for Transformer-Based Generative Models",
+    "author_date": "Yu et al., OSDI 2022",
+    "url": "https://www.usenix.org/conference/osdi22/presentation/yu",
+    "use": "Iteration-level scheduling; do not transplant paper benchmark numbers."
+  },
+  {
+    "id": "R23",
+    "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+    "author_date": "Kwon et al., 2023",
+    "url": "https://arxiv.org/abs/2309.06180",
+    "use": "Logical blocks, physical storage and sharing; paper is historical, source determines current code."
+  },
+  {
+    "id": "R24",
+    "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+    "author_date": "Dao et al., 2022",
+    "url": "https://arxiv.org/abs/2205.14135",
+    "use": "Attention IO optimization is distinct from persistent KV allocation."
+  },
+  {
+    "id": "R25",
+    "title": "Architecture Overview",
+    "author_date": "vLLM docs, inspected 2026-10-02",
+    "url": "https://docs.vllm.ai/en/latest/design/arch_overview/",
+    "use": "Frontend/core/worker/model responsibilities; actual processes depend on configuration."
+  },
+  {
+    "id": "R26",
+    "title": "OpenAI-Compatible Server",
+    "author_date": "vLLM docs, inspected 2026-10-02",
+    "url": "https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/",
+    "use": "API capability families and model-specific applicability."
+  },
+  {
+    "id": "R27",
+    "title": "Renderer APIs",
+    "author_date": "vLLM docs and pinned repository document",
+    "url": "https://docs.vllm.ai/en/latest/serving/online_serving/renderer/",
+    "use": "Render/derender, opt-in scale-out endpoints and multimodal transport contract."
+  },
+  {
+    "id": "R28",
+    "title": "Multi-Modal Data Processing",
+    "author_date": "vLLM docs, inspected 2026-10-02",
+    "url": "https://docs.vllm.ai/en/latest/design/mm_processing/",
+    "use": "Processor outputs, placeholder updates and processor-output caching."
+  },
+  {
+    "id": "R29",
+    "title": "Disaggregated Encoder",
+    "author_date": "vLLM docs, inspected 2026-10-02",
+    "url": "https://docs.vllm.ai/en/latest/features/disagg_encoder/",
+    "use": "Encoder-cache transfer is different from decoder KV transfer."
+  },
+  {
+    "id": "R30",
+    "title": "Model Runner V2 Design Document",
+    "author_date": "vLLM docs, inspected 2026-10-02",
+    "url": "https://docs.vllm.ai/en/latest/design/model_runner_v2/",
+    "use": "Persistent state versus step input; inspect runtime dispatch rather than infer it."
+  },
+  {
+    "id": "R31",
+    "title": "zero-to-sglang README",
+    "author_date": "Datawhale / RadixArk, inspected 2026-10-02",
+    "url": "https://github.com/datawhalechina/zero-to-sglang/blob/main/README.md",
+    "use": "Reference course structure, not evidence that one learning sequence is best."
+  }
+]

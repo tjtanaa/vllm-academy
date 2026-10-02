@@ -1,0 +1,7 @@
+COMMAND: python -m labs.cache_lifecycle
+
+STDOUT:
+Expected rejection: Storage still in use
+After last reader: recycled
+
+STDERR:

@@ -1,0 +1,50 @@
+name: Phase 1 redesigned labs
+on:
+  push:
+    paths:
+      - 'phase1/redesign/**'
+      - '.github/workflows/phase1-redesign.yml'
+  pull_request:
+    paths:
+      - 'phase1/redesign/**'
+      - '.github/workflows/phase1-redesign.yml'
+permissions:
+  contents: read
+jobs:
+  standalone-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: phase1/redesign
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CPU lab and handbook dependencies
+        run: |
+          python -m pip install 'torch==2.10.0' --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'pytest>=8,<10' 'mistune>=3,<4'
+      - name: Run isolated labs and tests
+        run: |
+          python -m pytest -q
+          python -m compileall -q labs tests build_handbook.py figures/render.py
+          for lab in bigram naive_transformer train_tiny render_contract vision_path cache_lifecycle streaming; do
+            python -m "labs.${lab}"
+          done
+      - name: Build handbook and validate local links
+        run: python build_handbook.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase1-illustrated-handbook
+          path: |
+            phase1/redesign/START_HERE.html
+            phase1/redesign/HANDBOOK.md
+            phase1/redesign/figures/*.svg
+            phase1/redesign/figures/*.dot
+          if-no-files-found: error
+# No GPU/checkpoint downloads or privileged self-hosted jobs.

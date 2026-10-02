@@ -1,0 +1,57 @@
+COMMAND: python -m labs.train_tiny
+
+STDOUT:
+{
+  "steps": 50,
+  "initial_loss": 1.954903483390808,
+  "final_training_loss": 0.00428081164136529,
+  "inputs": [
+    [
+      1,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3
+    ]
+  ],
+  "shifted_targets": [
+    [
+      2,
+      3,
+      4,
+      1,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3,
+      4
+    ]
+  ],
+  "interpretation": "memorizing a synthetic training sequence; not held-out generalization"
+}
+
+STDERR:

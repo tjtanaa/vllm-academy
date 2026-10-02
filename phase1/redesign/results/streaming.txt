@@ -1,0 +1,6 @@
+COMMAND: python -m labs.streaming
+
+STDOUT:
+["{\"text\":\"你好\"}", "[DONE]"]
+
+STDERR:

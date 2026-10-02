@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-02",
+  "scope": "Phase 1 standalone supplement only",
+  "base_commit": "40ad5af88b3f8acf426393f8b440cff3a3dfd453",
+  "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "packages": {
+    "torch": "2.10.0+cpu",
+    "pytest": "9.0.2",
+    "mistune": "3.2.1"
+  },
+  "checks": [
+    {
+      "command": "python -m pytest -q",
+      "returncode": 0,
+      "stdout": "............................................                             [100%]\n44 passed in 0.85s\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m compileall -q labs tests build_handbook.py figures/render.py",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python -m labs.bigram",
+      "returncode": 0,
+      "stdout": "{\n  \"cats_eat\": {\n    \"cats\": 0.14285714285714285,\n    \"dogs\": 0.14285714285714285,\n    \"eat\": 0.14285714285714285,\n    \"fish\": 0.2857142857142857,\n    \"food\": 0.2857142857142857\n  },\n  \"dogs_eat\": {\n    \"cats\": 0.14285714285714285,\n    \"dogs\": 0.14285714285714285,\n    \"eat\": 0.14285714285714285,\n    \"fish\": 0.2857142857142857,\n    \"food\": 0.2857142857142857\n  },\n  \"same_last_word_same_distribution\": true\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m labs.naive_transformer",
+      "returncode": 0,
+      "stdout": "{\n  \"dense\": {\n    \"ids\": [\n      1,\n      6\n    ],\n    \"embedding\": [\n      1,\n      6,\n      24\n    ],\n    \"layers\": [\n      {\n        \"q\": [\n          1,\n          3,\n          6,\n          8\n        ],\n        \"k\": [\n          1,\n          3,\n          6,\n          8\n        ],\n        \"attention_scores\": [\n          1,\n          3,\n          6,\n          6\n        ],\n        \"offset\": 0\n      },\n      {\n        \"q\": [\n          1,\n          3,\n          6,\n          8\n        ],\n        \"k\": [\n          1,\n          3,\n          6,\n          8\n        ],\n        \"attention_scores\": [\n          1,\n          3,\n          6,\n          6\n        ],\n        \"offset\": 0\n      }\n    ],\n    \"logits\": [\n      1,\n      6,\n      32\n    ]\n  },\n  \"cached_tail\": {\n    \"ids\": [\n      1,\n      2\n    ],\n    \"embedding\": [\n      1,\n      2,\n      24\n    ],\n    \"layers\": [\n      {\n        \"q\": [\n          1,\n          3,\n          2,\n          8\n        ],\n        \"k\": [\n          1,\n          3,\n          6,\n          8\n        ],\n        \"attention_scores\": [\n          1,\n          3,\n          2,\n          6\n        ],\n        \"offset\": 4\n      },\n      {\n        \"q\": [\n          1,\n          3,\n          2,\n          8\n        ],\n        \"k\": [\n          1,\n          3,\n          6,\n          8\n        ],\n        \"attention_scores\": [\n          1,\n          3,\n          2,\n          6\n        ],\n        \"offset\": 4\n      }\n    ],\n    \"logits\": [\n      1,\n      2,\n      32\n    ]\n  },\n  \"max_absolute_error\": 2.384185791015625e-07,\n  \"generated_ids\": [\n    [\n      2,\n      9,\n      8,\n      13\n    ]\n  ],\n  \"scope\": \"random weights; correctness illustration, not a language-quality demo\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m labs.train_tiny",
+      "returncode": 0,
+      "stdout": "{\n  \"steps\": 50,\n  \"initial_loss\": 1.954903483390808,\n  \"final_training_loss\": 0.00428081164136529,\n  \"inputs\": [\n    [\n      1,\n      2,\n      3,\n      4,\n      1,\n      2,\n      3,\n      4,\n      1,\n      2,\n      3,\n      4,\n      1,\n      2,\n      3,\n      4,\n      1,\n      2,\n      3\n    ]\n  ],\n  \"shifted_targets\": [\n    [\n      2,\n      3,\n      4,\n      1,\n      2,\n      3,\n      4,\n      1,\n      2,\n      3,\n      4,\n      1,\n      2,\n      3,\n      4,\n      1,\n      2,\n      3,\n      4\n    ]\n  ],\n  \"interpretation\": \"memorizing a synthetic training sequence; not held-out generalization\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m labs.render_contract",
+      "returncode": 0,
+      "stdout": "{\n  \"wire\": {\n    \"identity\": {\n      \"model\": \"model@revision\",\n      \"tokenizer\": \"tok@revision\",\n      \"template\": \"template-v1\",\n      \"processor\": \"text-v1\",\n      \"tenant\": \"tenant-A\"\n    },\n    \"token_ids\": [\n      117,\n      115,\n      101,\n      114,\n      58,\n      49,\n      55,\n      58,\n      87,\n      104,\n      97,\n      116,\n      32,\n      105,\n      115,\n      32,\n      75,\n      86,\n      32,\n      99,\n      97,\n      99,\n      104,\n      101,\n      63,\n      10,\n      97,\n      115,\n      115,\n      105,\n      115,\n      116,\n      97,\n      110,\n      116,\n      58\n    ],\n    \"max_new_tokens\": 8\n  },\n  \"roundtrip_token_count\": 36,\n  \"cache_key\": \"fd784d4d16812f3fa6beaf674cf52a2ca35f99f3749526befeed6fa9cf439b51\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m labs.vision_path",
+      "returncode": 0,
+      "stdout": "{\n  \"image\": [\n    1,\n    3,\n    8,\n    8\n  ],\n  \"patch_vectors\": [\n    1,\n    4,\n    48\n  ],\n  \"vision_features\": [\n    1,\n    4,\n    12\n  ],\n  \"projected\": [\n    1,\n    4,\n    24\n  ],\n  \"llm_embeddings\": [\n    1,\n    9,\n    24\n  ],\n  \"llm_logits\": [\n    1,\n    9,\n    32\n  ],\n  \"scope\": \"synthetic tensors and random weights; no semantic image understanding\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m labs.cache_lifecycle",
+      "returncode": 0,
+      "stdout": "Expected rejection: Storage still in use\nAfter last reader: recycled\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m labs.streaming",
+      "returncode": 0,
+      "stdout": "[\"{\\\"text\\\":\\\"\u4f60\u597d\\\"}\", \"[DONE]\"]\n",
+      "stderr": ""
+    },
+    {
+      "command": "python build_handbook.py",
+      "returncode": 0,
+      "stdout": "{\n  \"markdown_link_errors\": [],\n  \"html_internal_missing_anchors\": [],\n  \"lesson_files\": 18,\n  \"references\": 31,\n  \"svg_figures\": 4,\n  \"html_bytes\": 288372,\n  \"source_sections\": 29\n}\n",
+      "stderr": ""
+    }
+  ],
+  "full_checkpoints": "not_run",
+  "gpu": "not_run",
+  "hosted_ci": "check GitHub separately"
+}

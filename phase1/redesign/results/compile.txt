@@ -1,0 +1,5 @@
+COMMAND: python -m compileall -q labs tests figures
+
+STDOUT:
+
+STDERR:

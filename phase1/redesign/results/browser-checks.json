@@ -1,0 +1,5 @@
+{
+  "status": "not_completed",
+  "reason": "Chromium blocked file:// navigation by administrator policy; no browser screenshot was produced. SVG/PNG diagrams were independently rendered and visually inspected.",
+  "does_not_invalidate": "CPU tests or static HTML/internal-link validation"
+}

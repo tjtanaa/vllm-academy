@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-02",
+  "repository": "vllm-project/vllm",
+  "commit": "b558f160a2c0abcb5902acc3c91a14c38a4af173",
+  "scope": "source reading only; selected excerpts and symbol search, not full runtime validation",
+  "academy_base_commit": "40ad5af88b3f8acf426393f8b440cff3a3dfd453",
+  "preserves_existing_upstream_baseline": true,
+  "entries": [
+    {
+      "id": "api",
+      "path": "vllm/entrypoints/openai/chat_completion/api_router.py",
+      "symbol": "create_chat_completion",
+      "read_start": 1,
+      "read_end": 130,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/entrypoints/openai/chat_completion/api_router.py#L1-L130",
+      "question": "Follow validation, handler delegation, errors and SSE. Do not begin by reading the whole server.",
+      "verification": "selected excerpt inspected"
+    },
+    {
+      "id": "renderer",
+      "path": "vllm/renderers/base.py",
+      "symbol": "BaseRenderer",
+      "read_start": 70,
+      "read_end": 170,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/renderers/base.py#L70-L170",
+      "question": "Distinguish tokenizer and multimodal-processing executors from the GPU model executor.",
+      "verification": "selected excerpt inspected"
+    },
+    {
+      "id": "render-wire",
+      "path": "docs/serving/online_serving/renderer.md",
+      "symbol": null,
+      "read_start": null,
+      "read_end": null,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/docs/serving/online_serving/renderer.md",
+      "question": "Read Responses statelessness and multimodal kwargs_data/mm_metadata requirements.",
+      "verification": "selected excerpt inspected"
+    },
+    {
+      "id": "input",
+      "path": "vllm/v1/engine/input_processor.py",
+      "symbol": "InputProcessor",
+      "read_start": 50,
+      "read_end": 155,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/v1/engine/input_processor.py#L50-L155",
+      "question": "Inspect task-specific parameter validation and renderer ownership.",
+      "verification": "selected excerpt inspected"
+    },
+    {
+      "id": "processor",
+      "path": "vllm/multimodal/processing/processor.py",
+      "symbol": "BaseMultiModalProcessor",
+      "read_start": null,
+      "read_end": null,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/multimodal/processing/processor.py",
+      "question": "Located by symbol search; read prompt updates, item correspondence and cache handling locally.",
+      "verification": "symbol search located"
+    },
+    {
+      "id": "core",
+      "path": "vllm/v1/engine/core.py",
+      "symbol": "EngineCore",
+      "read_start": null,
+      "read_end": null,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/v1/engine/core.py",
+      "question": "Located by symbol search; trace the scheduled work object into execution and the returned output.",
+      "verification": "symbol search located"
+    },
+    {
+      "id": "scheduler",
+      "path": "vllm/v1/core/sched/scheduler.py",
+      "symbol": "Scheduler",
+      "read_start": 85,
+      "read_end": 135,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/v1/core/sched/scheduler.py#L85-L135",
+      "question": "Compare admission constraints and runner slots, then locate schedule and update_from_output(s).",
+      "verification": "selected excerpt inspected"
+    },
+    {
+      "id": "runner",
+      "path": "vllm/v1/worker/gpu/model_runner.py",
+      "symbol": null,
+      "read_start": 1,
+      "read_end": 100,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/v1/worker/gpu/model_runner.py#L1-L100",
+      "question": "Read model-agnostic design constraint and imports; follow selected helper functions, not every line.",
+      "verification": "selected excerpt inspected"
+    },
+    {
+      "id": "vlm",
+      "path": "vllm/model_executor/models/llava.py",
+      "symbol": "LlavaForConditionalGeneration",
+      "read_start": 450,
+      "read_end": 670,
+      "url": "https://github.com/vllm-project/vllm/blob/b558f160a2c0abcb5902acc3c91a14c38a4af173/vllm/model_executor/models/llava.py#L450-L670",
+      "question": "Read _process_image_input and embed_multimodal. Follow vision tower, projector and language model.",
+      "verification": "selected excerpt inspected"
+    }
+  ]
+}
