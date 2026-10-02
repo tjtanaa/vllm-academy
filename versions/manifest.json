@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "academy_version": "0.1.0-dev",
+  "mini_engine_version": "0.1.0",
+  "upstream_baseline": {
+    "repository": "vllm-project/vllm",
+    "tag": "v0.29.0",
+    "commit": "98dff2a81d747d1dba01a47f939f48c3526d4206",
+    "tag_mapping_checked_on": "2026-10-02",
+    "scope": "source-reading only; no runtime compatibility or latest-release claim"
+  },
+  "historical_coverage": {
+    "status": "not_selected",
+    "complete": false
+  },
+  "releases": [
+    {
+      "upstream_tag": "v0.29.0",
+      "upstream_commit": "98dff2a81d747d1dba01a47f939f48c3526d4206",
+      "comparison_base_commit": null,
+      "analysis": "phase2/releases/v0.29.0.md",
+      "status": "source-baseline",
+      "mini_engine_version": "0.1.0",
+      "runtime_validation": "not_run",
+      "adaptation": "initial teaching concepts; not production parity"
+    }
+  ],
+  "source_map": "maintainers/source-map.json",
+  "phases": {
+    "phase1": "seed-drafts",
+    "phase2": "framework-and-baseline",
+    "phase3": "policy-and-manifest"
+  },
+  "scheduled_monitoring_enabled": false
+}

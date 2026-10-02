@@ -1,0 +1,90 @@
+{
+  "checked_on": "2026-09-22",
+  "tag": "v0.29.0",
+  "commit": "98dff2a81d747d1dba01a47f939f48c3526d4206",
+  "verification_scope": "Listed source excerpts retrieved through GitHub; not an end-to-end runtime trace.",
+  "files": [
+    {
+      "id": "engine-core",
+      "path": "vllm/v1/engine/core.py",
+      "search_terms": [
+        "self.scheduler",
+        "model_executor"
+      ],
+      "inspected_lines": [
+        150,
+        230
+      ],
+      "url": "https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/v1/engine/core.py"
+    },
+    {
+      "id": "scheduler",
+      "path": "vllm/v1/core/sched/scheduler.py",
+      "search_terms": [
+        "def schedule(",
+        "num_computed_tokens",
+        "token_budget"
+      ],
+      "inspected_lines": [
+        468,
+        595
+      ],
+      "url": "https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/v1/core/sched/scheduler.py"
+    },
+    {
+      "id": "kv-manager",
+      "path": "vllm/v1/core/kv_cache_manager.py",
+      "search_terms": [
+        "class KVCacheManager",
+        "self.coordinator",
+        "self.block_pool"
+      ],
+      "inspected_lines": [
+        90,
+        185
+      ],
+      "url": "https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/v1/core/kv_cache_manager.py"
+    },
+    {
+      "id": "block-pool",
+      "path": "vllm/v1/core/block_pool.py",
+      "search_terms": [
+        "get_one_block",
+        "free_block_queue"
+      ],
+      "inspected_lines": [
+        35,
+        140
+      ],
+      "url": "https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/v1/core/block_pool.py"
+    },
+    {
+      "id": "gpu-runner-v2",
+      "path": "vllm/v1/worker/gpu/model_runner.py",
+      "search_terms": [
+        "SchedulerOutput",
+        "init_attn_backend",
+        "BlockTables"
+      ],
+      "inspected_lines": [
+        1,
+        110
+      ],
+      "url": "https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/v1/worker/gpu/model_runner.py"
+    },
+    {
+      "id": "kv-connector",
+      "path": "vllm/distributed/kv_transfer/kv_connector/v1/base.py",
+      "search_terms": [
+        "KVConnectorRole",
+        "start_load_kv",
+        "request_finished"
+      ],
+      "inspected_lines": [
+        1,
+        130
+      ],
+      "url": "https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/distributed/kv_transfer/kv_connector/v1/base.py"
+    }
+  ]
+}

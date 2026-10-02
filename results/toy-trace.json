@@ -1,0 +1,233 @@
+{
+  "device": "cpu",
+  "torch": "2.10.0+cpu",
+  "kind": "educational trace, not a performance measurement",
+  "outputs": {
+    "cold": [
+      8,
+      20,
+      8,
+      13,
+      54
+    ],
+    "warm": [
+      8,
+      20,
+      8,
+      13,
+      54
+    ],
+    "other": [
+      1,
+      53,
+      41
+    ]
+  },
+  "warm_reused_tokens": 8,
+  "trace": [
+    {
+      "tick": 1,
+      "scheduled_tokens": 4,
+      "events": [
+        {
+          "request": "cold",
+          "computed_before": 0,
+          "scheduled": 4,
+          "computed_after": 4,
+          "emitted": null,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 63
+    },
+    {
+      "tick": 2,
+      "scheduled_tokens": 4,
+      "events": [
+        {
+          "request": "cold",
+          "computed_before": 4,
+          "scheduled": 4,
+          "computed_after": 8,
+          "emitted": null,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 62
+    },
+    {
+      "tick": 3,
+      "scheduled_tokens": 1,
+      "events": [
+        {
+          "request": "cold",
+          "computed_before": 8,
+          "scheduled": 1,
+          "computed_after": 9,
+          "emitted": 8,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 61
+    },
+    {
+      "tick": 4,
+      "scheduled_tokens": 1,
+      "events": [
+        {
+          "request": "cold",
+          "computed_before": 9,
+          "scheduled": 1,
+          "computed_after": 10,
+          "emitted": 20,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 61
+    },
+    {
+      "tick": 5,
+      "scheduled_tokens": 1,
+      "events": [
+        {
+          "request": "cold",
+          "computed_before": 10,
+          "scheduled": 1,
+          "computed_after": 11,
+          "emitted": 8,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 61
+    },
+    {
+      "tick": 6,
+      "scheduled_tokens": 1,
+      "events": [
+        {
+          "request": "cold",
+          "computed_before": 11,
+          "scheduled": 1,
+          "computed_after": 12,
+          "emitted": 13,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 61
+    },
+    {
+      "tick": 7,
+      "scheduled_tokens": 1,
+      "events": [
+        {
+          "request": "cold",
+          "computed_before": 12,
+          "scheduled": 1,
+          "computed_after": 13,
+          "emitted": 54,
+          "status": "finished"
+        }
+      ],
+      "free_blocks": 61
+    },
+    {
+      "tick": 8,
+      "scheduled_tokens": 4,
+      "events": [
+        {
+          "request": "warm",
+          "computed_before": 8,
+          "scheduled": 1,
+          "computed_after": 9,
+          "emitted": 8,
+          "status": "running"
+        },
+        {
+          "request": "other",
+          "computed_before": 0,
+          "scheduled": 3,
+          "computed_after": 3,
+          "emitted": 1,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 59
+    },
+    {
+      "tick": 9,
+      "scheduled_tokens": 2,
+      "events": [
+        {
+          "request": "warm",
+          "computed_before": 9,
+          "scheduled": 1,
+          "computed_after": 10,
+          "emitted": 20,
+          "status": "running"
+        },
+        {
+          "request": "other",
+          "computed_before": 3,
+          "scheduled": 1,
+          "computed_after": 4,
+          "emitted": 53,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 59
+    },
+    {
+      "tick": 10,
+      "scheduled_tokens": 2,
+      "events": [
+        {
+          "request": "warm",
+          "computed_before": 10,
+          "scheduled": 1,
+          "computed_after": 11,
+          "emitted": 8,
+          "status": "running"
+        },
+        {
+          "request": "other",
+          "computed_before": 4,
+          "scheduled": 1,
+          "computed_after": 5,
+          "emitted": 41,
+          "status": "finished"
+        }
+      ],
+      "free_blocks": 59
+    },
+    {
+      "tick": 11,
+      "scheduled_tokens": 1,
+      "events": [
+        {
+          "request": "warm",
+          "computed_before": 11,
+          "scheduled": 1,
+          "computed_after": 12,
+          "emitted": 13,
+          "status": "running"
+        }
+      ],
+      "free_blocks": 59
+    },
+    {
+      "tick": 12,
+      "scheduled_tokens": 1,
+      "events": [
+        {
+          "request": "warm",
+          "computed_before": 12,
+          "scheduled": 1,
+          "computed_after": 13,
+          "emitted": 54,
+          "status": "finished"
+        }
+      ],
+      "free_blocks": 60
+    }
+  ]
+}

@@ -18,3 +18,5 @@ dist/
 results/local/
 site/
 .DS_Store
+/HANDBOOK.md
+/START_HERE.html

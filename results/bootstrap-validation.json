@@ -1,0 +1,32 @@
+{
+  "validation_date": "2026-10-02",
+  "purpose": "Local validation performed while preparing the initial vLLM Academy repository import",
+  "academy_version": "0.1.0-dev",
+  "mini_engine_version": "0.1.0",
+  "environment_file": "results/bootstrap-environment.json",
+  "executed": {
+    "pytest": {
+      "passed": 38,
+      "failed": 0,
+      "log": "results/bootstrap-test-log.txt"
+    },
+    "course_structure_and_local_links": {
+      "chapters": 18,
+      "local_links_checked": 86,
+      "errors": []
+    },
+    "version_source_relationships": "passed",
+    "compileall": "passed",
+    "bash_syntax": "passed",
+    "dense_reference_demo": "passed; 8 warm reused tokens"
+  },
+  "not_executed": [
+    "Fresh dependency installation",
+    "CUDA execution",
+    "ROCm execution",
+    "Real vLLM server or benchmark",
+    "Full upstream runtime trace",
+    "GitHub Actions (status is separate)"
+  ],
+  "imported_records": "Earlier results/validation.json retains the original seed metadata; this record does not rewrite its dates."
+}

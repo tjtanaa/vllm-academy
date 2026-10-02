@@ -1,0 +1,78 @@
+{
+  "prepared_on": "2026-09-22",
+  "status": "course starter; human review and GPU validation pending",
+  "source_reading_baseline": {
+    "tag": "v0.29.0",
+    "commit": "98dff2a81d747d1dba01a47f939f48c3526d4206",
+    "verified_excerpts": 6,
+    "full_runtime_trace": false
+  },
+  "local_environment": {
+    "recorded_at": "2026-09-22T02:42:16.607166+00:00",
+    "python": "3.13.5",
+    "os": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "packages": {
+      "vllm": null,
+      "torch": "2.10.0+cpu",
+      "triton": null,
+      "aiter": null,
+      "transformers": null,
+      "pytest": "9.0.2"
+    },
+    "gpu_runtime": "cpu",
+    "devices": [],
+    "torch_cuda_build": null,
+    "torch_hip_build": null,
+    "accelerator_available": false
+  },
+  "executed": {
+    "pytest": {
+      "passed": 30,
+      "failed": 0,
+      "log": "results/cpu-test-log.txt"
+    },
+    "toy_demo": {
+      "dense_reference_matches": true,
+      "warm_reused_tokens": 8,
+      "output_ids": [
+        8,
+        20,
+        8,
+        13,
+        54
+      ],
+      "trace": "results/toy-trace.json"
+    },
+    "python_compileall": "passed",
+    "bash_syntax": "passed",
+    "environment_collector_cpu": "passed",
+    "cli_help_smoke": "passed",
+    "course_structure_and_local_links": {
+      "chapters": 18,
+      "local_links_checked": 51,
+      "errors": []
+    },
+    "html_reader": {
+      "sections": 23,
+      "internal_targets": "passed",
+      "external_assets": "none"
+    }
+  },
+  "not_executed": [
+    "CUDA toy execution",
+    "ROCm toy execution",
+    "real vLLM server",
+    "real vLLM benchmarks",
+    "external KV transfer",
+    "distributed execution",
+    "source-map checker against a full upstream checkout",
+    "fresh dependency installation",
+    "GitHub-hosted workflow"
+  ],
+  "materials": {
+    "core_lesson_drafts": 12,
+    "advanced_workshop_briefs": 6,
+    "language": "English; Traditional Chinese landing page only"
+  },
+  "performance_measurements": "none; no GPU performance claims"
+}

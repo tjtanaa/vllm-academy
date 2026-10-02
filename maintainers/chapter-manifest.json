@@ -1,0 +1,92 @@
+[
+  {
+    "path": "course/part0/00-orientation.md",
+    "title": "00 \u2014 The contract of an inference engineer",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part0/01-first-server.md",
+    "title": "01 \u2014 Your first real vLLM server",
+    "status": "Core lesson draft; GPU recipe unverified"
+  },
+  {
+    "path": "course/part1/02-inference.md",
+    "title": "02 \u2014 Autoregressive inference, prefill, and decode",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part1/03-hardware.md",
+    "title": "03 \u2014 A hardware model that guides experiments",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part1/04-kv-memory.md",
+    "title": "04 \u2014 KV cache accounting and paging",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part1/05-measurement.md",
+    "title": "05 \u2014 Measure a workload, not a slogan",
+    "status": "Core lesson draft; GPU recipe unverified"
+  },
+  {
+    "path": "course/part2/06-tiny-decoder.md",
+    "title": "06 \u00b7 Build a decoder with a trustworthy reference",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part2/07-paged-kv.md",
+    "title": "07 \u00b7 Paged storage is an ownership problem",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part2/08-scheduling.md",
+    "title": "08 \u00b7 Schedule tokens, not whole conversations",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part2/09-prefix-cache.md",
+    "title": "09 \u00b7 Reuse the right prefix without corrupting a request",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part2/10-engine-integration.md",
+    "title": "10 \u00b7 Assemble a small engine and defend its boundaries",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part3/11-source-walkthrough.md",
+    "title": "11 \u00b7 From teaching objects to the real vLLM source",
+    "status": "Core lesson draft"
+  },
+  {
+    "path": "course/part3/12-backends-and-graphs.md",
+    "title": "12 \u00b7 Backends, compilation and graph execution",
+    "status": "Advanced workshop brief"
+  },
+  {
+    "path": "course/part3/13-quantization-and-speculation.md",
+    "title": "13 \u00b7 Change the bytes or change the work",
+    "status": "Advanced workshop brief"
+  },
+  {
+    "path": "course/part3/14-parallelism.md",
+    "title": "14 \u00b7 Parallelism is a placement and communication choice",
+    "status": "Advanced workshop brief"
+  },
+  {
+    "path": "course/part3/15-kv-transfer.md",
+    "title": "15 \u00b7 Offloading and disaggregation need lifetime proofs",
+    "status": "Advanced workshop brief"
+  },
+  {
+    "path": "course/part3/16-hybrid-and-multimodal.md",
+    "title": "16 \u00b7 Know where the simple KV model stops",
+    "status": "Advanced workshop brief"
+  },
+  {
+    "path": "course/part4/17-contributing.md",
+    "title": "17 \u00b7 Turn a finding into a useful contribution",
+    "status": "Advanced workshop brief"
+  }
+]
