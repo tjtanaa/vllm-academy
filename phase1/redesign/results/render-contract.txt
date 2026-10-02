@@ -1,0 +1,57 @@
+COMMAND: python -m labs.render_contract
+
+STDOUT:
+{
+  "wire": {
+    "identity": {
+      "model": "model@revision",
+      "tokenizer": "tok@revision",
+      "template": "template-v1",
+      "processor": "text-v1",
+      "tenant": "tenant-A"
+    },
+    "token_ids": [
+      117,
+      115,
+      101,
+      114,
+      58,
+      49,
+      55,
+      58,
+      87,
+      104,
+      97,
+      116,
+      32,
+      105,
+      115,
+      32,
+      75,
+      86,
+      32,
+      99,
+      97,
+      99,
+      104,
+      101,
+      63,
+      10,
+      97,
+      115,
+      115,
+      105,
+      115,
+      116,
+      97,
+      110,
+      116,
+      58
+    ],
+    "max_new_tokens": 8
+  },
+  "roundtrip_token_count": 36,
+  "cache_key": "fd784d4d16812f3fa6beaf674cf52a2ca35f99f3749526befeed6fa9cf439b51"
+}
+
+STDERR:

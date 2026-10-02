@@ -1,0 +1,38 @@
+
+digraph G {rankdir=TB;
+
+graph [bgcolor="white", fontname="DejaVu Sans", fontsize=16, pad=0.28, nodesep=0.30, ranksep=0.46, compound=true];
+node [shape=box, style="rounded,filled", fillcolor="#EFF6FB", color="#536C83", fontname="DejaVu Sans", fontsize=12, margin="0.16,0.13", penwidth=1.2];
+edge [color="#536C83", fontname="DejaVu Sans", fontsize=10, arrowsize=0.75];
+
+label="03  /  From media bytes to language-model state";labelloc=t;
+bytes [label="Validated media input
+Compressed bytes or a local image"];
+pixels [label="Decode + model-specific preprocessing
+Pixels / processor tensors"];
+patch [label="Patch embedding + vision encoder
+Bidirectional image representation",fillcolor="#E6F5EE"];
+project [label="Learned projector / merger
+Language-compatible features",fillcolor="#E6F5EE"];
+tokens [label="Text-side contract
+Rendered IDs • placeholders
+Ordered item/grid metadata"];
+merge [label="Aligned decoder input
+Check feature count and positions",fillcolor="#FFF7E5"];
+llm [label="Causal language-model computation
+Contextual hidden states / KV",fillcolor="#FFF7E5"];
+out [label="Logits → tokens → response"];
+bytes -> pixels -> patch -> project -> merge -> llm -> out;
+tokens -> merge;
+pcache [shape=note,label="Processor-result cache",fillcolor="#F9F9F9"];
+ecache [shape=note,label="Encoder-feature cache",fillcolor="#F9F9F9"];
+kvcache [shape=note,label="Decoder prefix KV cache",fillcolor="#F9F9F9"];
+pixels -> pcache [style=dashed,arrowhead=none];
+project -> ecache [style=dashed,arrowhead=none];
+llm -> kvcache [style=dashed,arrowhead=none];
+{rank=same;pixels;pcache;}
+{rank=same;tokens;project;ecache;}
+{rank=same;llm;kvcache;}
+note [shape=note,fillcolor="#F1EFFA",label="LLaVA-like teaching example, not every VLM.\nIdentity ≠ readiness ≠ ownership.\nThe CPU lab uses random weights: shapes, not image understanding."];
+out -> note [style=invis];
+}

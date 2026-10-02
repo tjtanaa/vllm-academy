@@ -1,0 +1,12 @@
+COMMAND: python -m labs.source_walk --help
+
+STDOUT:
+usage: source_walk.py [-h] --checkout CHECKOUT [--entry ENTRY] [--lines LINES]
+
+options:
+  -h, --help           show this help message and exit
+  --checkout CHECKOUT
+  --entry ENTRY
+  --lines LINES
+
+STDERR:

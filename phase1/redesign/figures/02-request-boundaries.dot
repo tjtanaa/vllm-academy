@@ -1,0 +1,41 @@
+
+digraph G { rankdir=TB;
+
+graph [bgcolor="white", fontname="DejaVu Sans", fontsize=16, pad=0.28, nodesep=0.30, ranksep=0.46, compound=true];
+node [shape=box, style="rounded,filled", fillcolor="#EFF6FB", color="#536C83", fontname="DejaVu Sans", fontsize=12, margin="0.16,0.13", penwidth=1.2];
+edge [color="#536C83", fontname="DejaVu Sans", fontsize=10, arrowsize=0.75];
+
+label="02  /  Follow the request and the return path"; labelloc=t;
+client [label="Client / application\nMay own conversation state and tool execution",fillcolor="#F1EFFA"];
+subgraph cluster_front {
+label="FRONTEND RESPONSIBILITIES";style="rounded";color="#BACAD8";
+api [label="API router + serving adapter\nProtocol validation • task intent • cancellation"];
+renderer [label="Renderer + modality processor\nTemplate • token IDs • tensors • metadata"];
+input [label="Engine input processing / client\nTask limits • core request • transport"];
+api -> renderer [label="messages / prompt / media"];
+renderer -> input [label="model-consistent input representation"];
+}
+subgraph cluster_core {
+label="ENGINE RESPONSIBILITIES";style="rounded";color="#72ADA4";bgcolor="#F5FBF9";
+core [label="Engine core\nOrchestration",fillcolor="#E6F5EE"];
+sched [label="Scheduler + cache management\nToken/encoder work • state availability",fillcolor="#E6F5EE"];
+core -> sched [label="request progress + budgets"];
+}
+subgraph cluster_exec {
+label="EXECUTION RESPONSIBILITIES  /  selection depends on configuration";style="rounded";color="#CDB794";
+exec [label="Model executor / worker(s)\nPer-device or per-rank execution",fillcolor="#FFF7E5"];
+runner [label="Selected model runner\nPersistent state → per-step inputs\nAttention/backend/graph helpers",fillcolor="#FFF7E5"];
+model [label="Model-specific implementation\nVision tower where applicable • LLM layers",fillcolor="#FFF7E5"];
+exec -> runner -> model;
+}
+post [label="Sampling or pooling + output handling\nTokens / vectors • finish metadata",fillcolor="#F1EFFA"];
+derender [label="Derender / response formatting\nText • structured fields • stream events",fillcolor="#F1EFFA"];
+client -> api; input -> core;
+sched -> exec [label="scheduled work, not raw HTTP"];
+model -> post [label="hidden states / logits"];
+post -> core [style=dashed,label="execution progress",constraint=false];
+post -> derender -> client [label="response",constraint=false];
+{rank=same;client;derender;}
+legend [shape=note,fillcolor="white",label="Logical map, not a universal call graph.\nA box need not be its own process.\nOffline and separated-render paths can enter differently."];
+post -> legend [style=invis];
+}

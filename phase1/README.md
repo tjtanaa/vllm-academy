@@ -2,6 +2,14 @@
 
 The stable introduction to inference-engine engineering. Start from a working request and end with a useful, reviewable contribution, not a collection of copied launch commands.
 
+## Revised theory-to-practice route — draft
+
+The [redesigned Phase 1](redesign/README.md) interleaves LLM history and model theory with CPU labs, source reading, and practical request-lifecycle exercises. It adds API families, rendering/derendering, multimodal input processing, vision-to-language computation, and deployment boundaries to the beginner route.
+
+Start with the [curriculum and pacing](redesign/CURRICULUM.md), then revisit the [architecture atlas](redesign/ARCHITECTURE_ATLAS.md) as the lessons progress. The supplement includes 18 lesson drafts, 44 locally passing CPU tests, four editable diagrams, cited references and an instructor guide. [Validation records](redesign/VALIDATION.md) distinguish those tests from unperformed integration work.
+
+The native Llama-3.2-1B and Qwen3-0.6B demos remain [required acceptance gates](redesign/MODEL_ACCEPTANCE.md). Their separate pretrained-engine patch is not included in this curriculum change, and full-checkpoint/GPU execution is not claimed. Keep the original route below for existing cohorts while the redesign is reviewed and piloted.
+
 ## Learning sequence
 
 | Step | Materials | Evidence to submit |

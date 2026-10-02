@@ -1,0 +1,146 @@
+[
+  {
+    "id": "00",
+    "title": "One request, five boxes",
+    "path": "lessons/00-first-request.md",
+    "theory": "Predict what a model needs; distinguish model, engine and API.",
+    "practice": "Inspect a request and the naive-decoder trace.",
+    "evidence": "One labeled request sketch; 5 boxes, not the full atlas."
+  },
+  {
+    "id": "01",
+    "title": "History as a sequence of design problems",
+    "path": "lessons/01-history.md",
+    "theory": "Counts \u2192 learned representations; attention; pretraining; post-training; serving.",
+    "practice": "Compare histories that a bigram model cannot distinguish.",
+    "evidence": "A problem/response/cost timeline, not a list of model brands."
+  },
+  {
+    "id": "02",
+    "title": "Text, tokens and conversation contracts",
+    "path": "lessons/02-tokens.md",
+    "theory": "Token IDs, special tokens, chat serialization and context limits.",
+    "practice": "Roundtrip a synthetic rendered request; inspect a real local tokenizer later.",
+    "evidence": "Predict why a role or template change changes the model input."
+  },
+  {
+    "id": "03",
+    "title": "Build a naive Transformer decoder",
+    "path": "lessons/03-naive-transformer.md",
+    "theory": "Embeddings, Q/K/V, masking, residuals, normalization and FFN.",
+    "practice": "Inspect every tensor shape; mutate future tokens.",
+    "evidence": "Causal invariance test and shape ledger."
+  },
+  {
+    "id": "04",
+    "title": "Training is not generation",
+    "path": "lessons/04-training-inference.md",
+    "theory": "Shifted targets, teacher forcing, loss, logits and sampling.",
+    "practice": "Train on a synthetic periodic sequence; compare with an autoregressive loop.",
+    "evidence": "Explain why lower training loss is not language-quality evidence."
+  },
+  {
+    "id": "05",
+    "title": "From naive code to Llama and Qwen",
+    "path": "lessons/05-real-models.md",
+    "theory": "RoPE, GQA, RMSNorm, SwiGLU, configuration and checkpoint contracts.",
+    "practice": "Audit Qwen head_dim; execute both native pretrained demos when patch is integrated.",
+    "evidence": "Mandatory checkpoint evidence gate, not random-weight equivalence alone."
+  },
+  {
+    "id": "06",
+    "title": "Remember computation: KV and token work",
+    "path": "lessons/06-kv-cache.md",
+    "theory": "Prefill/decode, computed vs sampled, cached chunk masks.",
+    "practice": "Compare dense recomputation with cached chunks and greedy generation.",
+    "evidence": "Cached and uncached logits agree within an explicit tolerance."
+  },
+  {
+    "id": "07",
+    "title": "One model, many requests",
+    "path": "lessons/07-scheduling.md",
+    "theory": "Iteration-level scheduling, admission, token budgets, completion and cancellation.",
+    "practice": "Replay a hand-worked schedule and the existing mini-engine trace.",
+    "evidence": "Explain logical scheduling versus physical GPU batching."
+  },
+  {
+    "id": "08",
+    "title": "Pages, prefixes and ownership",
+    "path": "lessons/08-pages-prefix.md",
+    "theory": "Logical/physical addressing, identity, references, eviction.",
+    "practice": "Use existing block-table tests; break a lifetime or prefix-identity assumption.",
+    "evidence": "Show exactly when a page is reusable."
+  },
+  {
+    "id": "09",
+    "title": "The complete production abstraction map",
+    "path": "lessons/09-system-map.md",
+    "theory": "API, renderer, input processor, core, scheduler, executor, worker, runner, model.",
+    "practice": "Assign one responsibility and data contract to each selected code excerpt.",
+    "evidence": "A request ledger with placement and lifetime, not class-name memorization."
+  },
+  {
+    "id": "10",
+    "title": "APIs and the return path",
+    "path": "lessons/10-apis.md",
+    "theory": "Completion/chat/Responses/pooling/audio; stream/error/abort contracts.",
+    "practice": "Split UTF-8 SSE data at arbitrary network boundaries.",
+    "evidence": "Explain why an API name does not imply model capability."
+  },
+  {
+    "id": "11",
+    "title": "Local and disaggregated rendering",
+    "path": "lessons/11-rendering.md",
+    "theory": "Template rendering/tokenization/derendering as service boundaries.",
+    "practice": "Serialize, transmit and verify a rendering contract; reject mismatched revisions.",
+    "evidence": "Distinguish renderer scaling from TP and from encoder/P-D separation."
+  },
+  {
+    "id": "12",
+    "title": "Import an image without losing its meaning",
+    "path": "lessons/12-multimodal-inputs.md",
+    "theory": "Media decoding, preprocessing, hashes, placeholders and metadata.",
+    "practice": "Inspect ordered processor outputs; change same-shaped media content.",
+    "evidence": "Separate compressed bytes, tensors and token placeholders."
+  },
+  {
+    "id": "13",
+    "title": "From image patches to language tokens",
+    "path": "lessons/13-vision-language.md",
+    "theory": "ViT, vision features, projector/merger and decoder conditioning.",
+    "practice": "Run a random-weight image\u2192patches\u2192vision\u2192projection\u2192causal-decoder path.",
+    "evidence": "Shape trace plus mismatch rejection; not an image-understanding claim."
+  },
+  {
+    "id": "14",
+    "title": "Schedule and cache multimodal work",
+    "path": "lessons/14-multimodal-cache.md",
+    "theory": "Processor cache, encoder cache, contextual KV, readiness and lifetimes.",
+    "practice": "Attempt reads before readiness and recycling with live readers.",
+    "evidence": "Explain which cache can be reused across different text prefixes."
+  },
+  {
+    "id": "15",
+    "title": "Put the boundaries on machines",
+    "path": "lessons/15-placement.md",
+    "theory": "Render/encode/prefill/decode disaggregation; TP/PP/DP/EP as different axes.",
+    "practice": "Design three placements and label every transferred object.",
+    "evidence": "Ownership and fallback table for a failed transfer."
+  },
+  {
+    "id": "16",
+    "title": "Measure and debug the whole path",
+    "path": "lessons/16-measurement.md",
+    "theory": "TTFT, ITL, queueing, preprocessing, encode, prefill, decode and network.",
+    "practice": "Design a controlled warm/cold comparison; follow a trace into one source helper.",
+    "evidence": "Raw evidence and a bottleneck hypothesis with a negative control."
+  },
+  {
+    "id": "17",
+    "title": "First useful contribution",
+    "path": "lessons/17-contribution.md",
+    "theory": "Reproduce, isolate, test, patch, review and document evidence.",
+    "practice": "Review one injected bug, then choose a bounded real issue.",
+    "evidence": "Useful draft PR or actionable reproduction plus Phase 2/3 mapping."
+  }
+]

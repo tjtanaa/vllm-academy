@@ -1,0 +1,33 @@
+
+digraph G { rankdir=TB;
+
+graph [bgcolor="white", fontname="DejaVu Sans", fontsize=16, pad=0.28, nodesep=0.30, ranksep=0.46, compound=true];
+node [shape=box, style="rounded,filled", fillcolor="#EFF6FB", color="#536C83", fontname="DejaVu Sans", fontsize=12, margin="0.16,0.13", penwidth=1.2];
+edge [color="#536C83", fontname="DejaVu Sans", fontsize=10, arrowsize=0.75];
+
+label="01  /  A model is one component of a serving system"; labelloc=t;
+subgraph cluster_service {
+  label="SERVICE RESPONSIBILITIES  /  conceptual boundaries, not process count"; color="#BACAD8"; style="rounded";
+  api [label="API / request contract\nMessages, parameters, errors"];
+  render [label="Prepare inputs\nTemplate • tokenizer • processor"];
+  sched [label="Organize execution\nRequests • budgets • state ownership"];
+  api -> render -> sched;
+  subgraph cluster_model {
+    label="NAIVE DECODER-ONLY MODEL  /  original lab simplification";
+    color="#72ADA4"; bgcolor="#F5FBF9"; style="rounded";
+    emb [label="IDs + positions → embeddings\n[B,T] → [B,T,D]",fillcolor="#E6F5EE"];
+    attn [label="Causal Q/K/V attention\nFuture positions are masked",fillcolor="#E6F5EE"];
+    mlp [label="Residuals + normalization + FFN\nRepeat decoder blocks",fillcolor="#E6F5EE"];
+    logits [label="Vocabulary projection\nLogits [B,T,V]",fillcolor="#E6F5EE"];
+    emb -> attn -> mlp -> logits;
+  }
+  select [label="Choose next token\nSampling policy + stop conditions"];
+  output [label="Return the result\nDetokenize • format • stream"];
+  sched -> emb [label="scheduled tensor work"];
+  logits -> select [label="last relevant logits"];
+  select -> output;
+  select -> sched [label="continue with new token",style=dashed,constraint=false];
+}
+origin [shape=note,fillcolor="#FFF7E5",label="2017 Transformer: encoder + decoder + cross-attention.\nThis lab chooses a smaller decoder-only path.\nRandom-weight logits are not a language-quality result."];
+output -> origin [style=invis];
+}

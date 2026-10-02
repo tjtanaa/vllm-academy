@@ -1,0 +1,7 @@
+COMMAND: python -m pytest -q
+
+STDOUT:
+............................................                             [100%]
+44 passed in 1.06s
+
+STDERR:

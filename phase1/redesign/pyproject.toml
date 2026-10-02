@@ -1,0 +1,9 @@
+[project]
+name = "vllm-academy-phase1-labs"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = ["torch", "pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

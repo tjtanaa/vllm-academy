@@ -1,0 +1,13 @@
+COMMAND: python -m labs.inspect_snapshot --help
+
+STDOUT:
+usage: inspect_snapshot.py [-h] [--tokenize] snapshot
+
+positional arguments:
+  snapshot
+
+options:
+  -h, --help  show this help message and exit
+  --tokenize  Optional installed Transformers; local files only
+
+STDERR:
