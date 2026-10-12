@@ -1,0 +1,160 @@
+# 🔮 Hot Take Court — labelled SPECULATION, not news.
+# Each take: a bold claim, the evidence it rests on, what would prove it wrong, our confidence,
+# and the date we judge it. The bot lets people vote agree/disagree and shows the tally.
+# When a take's `judge_on` date passes, a moderator sets `verdict: right | wrong | partly` and adds `verdict_note`.
+# Takes ht-01..ht-05 first appeared in the vLLM Weekly newsletter, issue #2 (12 Oct 2026).
+as_of: "2026-10-12"
+disclaimer:
+  en: "🔮 SPECULATION ZONE. These are our bets, not facts. We put a date on each one and grade ourselves in public."
+  zh: "🔮 純屬推測。以下是我們下的注，不是事實。每一則都有判決日期，我們會公開幫自己打分數。"
+takes:
+  - id: ht-01
+    emoji: "🦀"
+    confidence: 35
+    judge_on: "2026-12-31"
+    episode: E13
+    claim:
+      en: "The Rust frontend becomes vLLM's default API server before 2027."
+      zh: "Rust 前端會在 2027 年前成為 vLLM 預設的 API server。"
+    evidence:
+      en: "An experimental drop-in Rust (axum) frontend now lives in `rust/` on main and talks to the Python engine core over the same ZMQ boundary, with optional gRPC. It got 45+ commits in three weeks."
+      zh: "實驗性、可直接替換的 Rust（axum）前端現在放在 main 的 `rust/` 裡，透過同一條 ZMQ 邊界和 Python engine core 溝通，還可選用 gRPC。三週內進了 45 個以上的 commit。"
+    wrong_if:
+      en: "On 31 Dec 2026, `vllm serve` still launches the Python API server unless you opt in."
+      zh: "2026 年 12 月 31 日時，`vllm serve` 還是預設啟動 Python API server，要自己選擇才會用 Rust。"
+    source: "https://github.com/vllm-project/vllm/tree/main/rust"
+  - id: ht-02
+    emoji: "🧭"
+    confidence: 50
+    judge_on: "2027-06-30"
+    episode: E10
+    claim:
+      en: "Fine-tuned BERT classifiers lose to one-token LLM decisions for routing and guardrails in new projects."
+      zh: "在新專案裡，做路由與 guardrail 時，一個 token 的 LLM 決策會打敗 fine-tune 過的 BERT 分類器。"
+    evidence:
+      en: "`/v1/systemone` returns a probability for every option from one output token, and prefix caching makes extra questions about the same state nearly free."
+      zh: "`/v1/systemone` 用一個輸出 token 就回傳每個選項的機率，而 prefix caching 讓針對同一個 state 的額外問題幾乎免費。"
+    wrong_if:
+      en: "By mid-2027, most new routing/guardrail tutorials and vendor docs still default to a separate small encoder model."
+      zh: "到 2027 年中，大多數新的路由／guardrail 教學與廠商文件，預設還是用獨立的小型 encoder 模型。"
+    source: "https://github.com/vllm-project/vllm/blob/main/docs/serving/online_serving/structured_decisions.md"
+  - id: ht-03
+    emoji: "🪶"
+    confidence: 60
+    judge_on: "2027-06-30"
+    episode: E18
+    claim:
+      en: "A 4-bit KV cache becomes the normal default for big models, and FP8 KV becomes the 'careful' setting."
+      zh: "4-bit KV cache 會成為大模型的一般預設，FP8 KV 則變成「保守」的選項。"
+    evidence:
+      en: "NVFP4 KV is already the SM100 default for DeepSeek-V4.1-Flash in v0.31, and NVFP4 KV support reached RTX-class SM8x/SM12x cards on main."
+      zh: "在 v0.31 中，NVFP4 KV 已經是 DeepSeek-V4.1-Flash 在 SM100 上的預設，main 分支上 NVFP4 KV 也支援到 RTX 等級的 SM8x/SM12x 顯卡。"
+    wrong_if:
+      en: "By mid-2027, most new model recipes in vLLM's docs still default to BF16 or FP8 KV."
+      zh: "到 2027 年中，vLLM 文件中大多數新模型的 recipe 預設還是 BF16 或 FP8 KV。"
+    source: "https://github.com/vllm-project/vllm/releases/tag/v0.31.0"
+  - id: ht-04
+    emoji: "🏁"
+    confidence: 80
+    judge_on: "2027-03-31"
+    episode: E24
+    claim:
+      en: "Any engine comparison done on a model's launch day will be out of date within a month."
+      zh: "任何在模型發布當天做的推論引擎比較，一個月內就會過時。"
+    evidence:
+      en: "vLLM reports DeepSeek-V4.1-Flash got about 5x faster on agentic throughput in the three weeks after day-0 support."
+      zh: "vLLM 回報，DeepSeek-V4.1-Flash 在首日支援後三週內，agent 吞吐量快了大約 5 倍。"
+    wrong_if:
+      en: "The next three major open-model launches show less than 1.5x improvement in the first month on vLLM's own posts."
+      zh: "接下來三個主要開源模型發布後，vLLM 自己的文章顯示第一個月的提升都不到 1.5 倍。"
+    source: "https://vllm.ai/blog/2026-10-07-deepseek-v41-flash"
+  - id: ht-05
+    emoji: "🪦"
+    confidence: 55
+    judge_on: "2026-12-25"
+    episode: E15
+    claim:
+      en: "Model Runner V1 gets deleted from vLLM before Christmas 2026."
+      zh: "Model Runner V1 會在 2026 年聖誕節前從 vLLM 中刪除。"
+    evidence:
+      en: "Model Runner V2 keeps gaining features (draft-model spec decode, logits processors, async DFlash scheduling) while V1 paths are being peeled away."
+      zh: "Model Runner V2 持續加入功能（草稿模型推測解碼、logits processor、DFlash 非同步排程），V1 的路徑則一塊一塊被拆掉。"
+    wrong_if:
+      en: "On 25 Dec 2026, the V1 GPU model runner still exists on main."
+      zh: "2026 年 12 月 25 日時，main 上仍然存在 V1 的 GPU model runner。"
+    source: "https://github.com/vllm-project/vllm/releases"
+  - id: ht-06
+    emoji: "🤖"
+    confidence: 70
+    judge_on: "2027-06-30"
+    episode: E27
+    claim:
+      en: "'Agentic throughput under a per-user speed floor' replaces raw tokens/sec as the headline inference number."
+      zh: "「在每位使用者速度下限下的 agent 吞吐量」會取代單純的 tokens/sec，成為推論的頭條數字。"
+    evidence:
+      en: "vLLM's DeepSeek-V4.1-Flash and Vera Rubin posts both lead with SemiAnalysis AgentX results under a per-user TPS constraint."
+      zh: "vLLM 的 DeepSeek-V4.1-Flash 與 Vera Rubin 文章，都以 SemiAnalysis AgentX 在每位使用者 TPS 限制下的結果開場。"
+    wrong_if:
+      en: "Most new hardware and engine launch posts in H1 2027 still headline unconstrained tokens/s."
+      zh: "2027 上半年大多數新硬體與引擎的發表文章，頭條還是不受限制的 tokens/s。"
+    source: "https://vllm.ai/blog/2026-10-09-vera-rubin-preview"
+  - id: ht-07
+    emoji: "✂️"
+    confidence: 65
+    judge_on: "2027-12-31"
+    episode: E20
+    claim:
+      en: "Prefill/decode disaggregation becomes the default for multi-node production serving by the end of 2027."
+      zh: "到 2027 年底，prefill/decode 分離會成為多節點生產環境服務的預設做法。"
+    evidence:
+      en: "vLLM published a full P/D guide (29 Sep 2026) and served a 2.4T-parameter model with P/D. Its own numbers also show the cost: TTFT rose from 0.7 s to 2.2 s without fast KV transfer."
+      zh: "vLLM 發表了完整的 P/D 指南（2026 年 9 月 29 日），也用 P/D 服務了 2.4 兆參數的模型。他們自己的數字也揭露了代價：沒有快速 KV 傳輸時，TTFT 從 0.7 秒變成 2.2 秒。"
+    wrong_if:
+      en: "Major serving stacks' reference deployments for large MoE models in late 2027 are still collocated."
+      zh: "2027 年底，主要服務框架針對大型 MoE 的參考部署仍然是 prefill 與 decode 放在一起。"
+    source: "https://vllm.ai/blog/2026-09-29-disaggregated-serving-guide"
+  - id: ht-08
+    emoji: "🗄️"
+    confidence: 70
+    judge_on: "2027-12-31"
+    episode: E21
+    claim:
+      en: "'KV cache hit rate' becomes an SLO that on-call engineers get paged for."
+      zh: "「KV cache 命中率」會變成值班工程師會被叫起來處理的 SLO。"
+    evidence:
+      en: "Tiered KV offload more than doubled throughput at high concurrency in vLLM's 10 Sep 2026 post, and agent traffic is mostly re-used prefixes."
+      zh: "vLLM 2026 年 9 月 10 日的文章中，分層 KV offload 讓高並行下的吞吐量增加超過一倍，而 agent 流量大部分都是重複使用的前綴。"
+    wrong_if:
+      en: "Popular serving dashboards and SRE guides in 2027 still don't track hit rate as a top-level metric."
+      zh: "2027 年熱門的服務儀表板與 SRE 指南，仍然沒有把命中率列為頂層指標。"
+    source: "https://vllm.ai/blog/2026-09-10-tiered-kv-offloading"
+  - id: ht-09
+    emoji: "🧊"
+    confidence: 55
+    judge_on: "2027-12-31"
+    episode: E28
+    claim:
+      en: "Sub-10-second cold starts for 100B+ models make 'serverless' per-request model switching normal."
+      zh: "100B 以上模型的冷啟動壓到 10 秒以內，讓「serverless」按請求切換模型變成常態。"
+    evidence:
+      en: "Fast Start (v0.30), the `vllm preload` daemon and CRIU snapshots (v0.31) all attack startup time within two releases."
+      zh: "Fast Start（v0.30）、`vllm preload` 常駐程式與 CRIU 快照（v0.31），在兩個版本內一起對付啟動時間。"
+    wrong_if:
+      en: "By end of 2027, typical documented restarts for a 100B+ model on vLLM still take a minute or more."
+      zh: "到 2027 年底，vLLM 上 100B 以上模型有記錄的典型重啟時間仍然要一分鐘以上。"
+    source: "https://github.com/vllm-project/vllm/releases/tag/v0.31.0"
+  - id: ht-10
+    emoji: "🇹🇼"
+    confidence: 45
+    judge_on: "2027-10-12"
+    episode: E26
+    claim:
+      en: "'Inference engineer' shows up as its own job title at multiple Taiwanese hardware companies within a year."
+      zh: "一年內，「推論工程師」會以獨立職稱出現在多家台灣硬體公司的職缺中。"
+    evidence:
+      en: "NVIDIA Hsinchu already lists TensorRT-LLM roles that prefer vLLM/SGLang experience, and the TAIONE × Embedded LLM vLLM Fellowship Track launched in Aug 2026. Weak evidence: this is our spiciest take."
+      zh: "NVIDIA 新竹已經有偏好 vLLM/SGLang 經驗的 TensorRT-LLM 職缺，TAIONE × Embedded LLM 的 vLLM Fellowship Track 也在 2026 年 8 月啟動。證據很薄弱：這是我們最辣的一則預測。"
+    wrong_if:
+      en: "On 12 Oct 2027, a 104/LinkedIn search finds the title at fewer than three Taiwan-based hardware companies."
+      zh: "2027 年 10 月 12 日時，在 104 或 LinkedIn 上搜尋，只有不到三家台灣硬體公司有這個職稱。"
+    source: "https://macaubusiness.com/taione-open-source-foundation-and-embedded-llm-collaborate-to-build-taiwans-vllm-ecosystem/"

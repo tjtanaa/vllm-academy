@@ -1,0 +1,291 @@
+episodes:
+  - id: E17
+    season: S4
+    minutes: 20
+    title:
+      en: "Speculative decoding: guess fast, verify once"
+      zh: "Speculative decoding：快速猜、一次驗"
+    hook:
+      en: "Get 2–3 tokens for the price of one big forward pass, with output provably identical to the original model. It sounds like cheating. It's math."
+      zh: "一次大模型 forward 換到 2–3 個 token，而且輸出可以證明和原模型完全一致。聽起來像作弊，其實是數學。"
+    aha:
+      en: |-
+        Decode is memory-bound (E05): checking 4 tokens costs about the same as generating 1. So:
+
+        1. A cheap **drafter** proposes k tokens.
+        2. The big **target** model scores all k in **one** forward pass.
+        3. Keep the longest accepted prefix, plus one bonus token from the target. Rejection sampling guarantees the same output distribution as the target alone.
+
+        Drafters in vLLM today: n-gram / prompt lookup, suffix decoding, EAGLE and EAGLE-3 heads, MTP (DeepSeek-style multi-token prediction), separate draft models, Medusa and DFlash.
+
+        The catch: the speedup depends on the **acceptance rate**, and it shrinks at large batch sizes where you're already compute-bound.
+      zh: |-
+        Decode 受限於記憶體（E05）：驗證 4 個 token 的成本和生成 1 個差不多。所以：
+
+        1. 一個便宜的**草稿模型**（drafter）先提出 k 個 token。
+        2. 大的**目標模型**用**一次** forward 為這 k 個 token 打分數。
+        3. 保留最長被接受的前綴，再加上目標模型給的一個額外 token。Rejection sampling 保證輸出分布和單獨使用目標模型完全相同。
+
+        vLLM 目前的 drafter：n-gram／prompt lookup、suffix decoding、EAGLE 與 EAGLE-3、MTP（DeepSeek 式多 token 預測）、獨立的草稿模型、Medusa 與 DFlash。
+
+        但要注意：加速幅度取決於**接受率**；在 batch 很大、已經受限於算力時，效果會縮水。
+    tldr:
+      en:
+        - "Draft k tokens cheaply, verify them in one target forward, keep the accepted prefix."
+        - "Rejection sampling preserves the target model's output distribution exactly."
+        - "Wins at low batch / memory-bound; gains shrink when you're compute-bound."
+      zh:
+        - "便宜地先猜 k 個 token，用一次目標模型 forward 驗證，保留被接受的前綴。"
+        - "Rejection sampling 精確保留目標模型的輸出分布。"
+        - "在小 batch／受限於記憶體時效果最好；受限於算力時增益會縮小。"
+    pro:
+      en: "Speculative decoding uses a cheap proposer, such as an n-gram matcher, an EAGLE head, an MTP module or a small draft model, to propose k tokens, then verifies them with one target forward pass. Rejection sampling keeps the output distribution identical to the target. Expected speedup depends on acceptance rate and the relative cost of drafting. It helps most for latency-sensitive, low-batch serving and can reduce throughput at high batch, so production systems tune k or disable it dynamically."
+      zh: "Speculative decoding 用便宜的提議者（n-gram 比對、EAGLE head、MTP 模組或小型草稿模型）提出 k 個 token，再用一次目標模型 forward 驗證。Rejection sampling 讓輸出分布和目標模型完全一致。預期加速取決於接受率與草稿成本的相對比例。它對重視延遲、小 batch 的服務最有幫助；在大 batch 時可能降低吞吐量，所以生產系統會調整 k 或動態關閉它。"
+    followup:
+      en: "Why do code-editing and RAG workloads get unusually high acceptance with n-gram drafting?"
+      zh: "為什麼程式碼編輯與 RAG 工作負載用 n-gram 草稿時，接受率特別高？"
+    lab: Q7
+    lab_hint:
+      en: "Q7 bonus round: rerun the benchmark with `--speculative-config '{\"method\": \"ngram\", \"num_speculative_tokens\": 4, \"prompt_lookup_max\": 4}'`."
+      zh: "Q7 加分關：加上 `--speculative-config '{\"method\": \"ngram\", \"num_speculative_tokens\": 4, \"prompt_lookup_max\": 4}'` 重跑 benchmark。"
+    deep_dive: course/part3/13-quantization-and-speculation.md
+    code: [spec_decode]
+  - id: E18
+    season: S4
+    minutes: 20
+    title:
+      en: "4 bits is enough? FP8, NVFP4 and the quantization zoo"
+      zh: "4 bit 就夠了？FP8、NVFP4 與量化動物園"
+    hook:
+      en: "Cut model memory in half, or by four, and the answers barely change. But \"barely\" is doing a lot of work. Here's how pros decide."
+      zh: "模型記憶體砍一半甚至砍到四分之一，答案幾乎不變。但「幾乎」這兩個字很關鍵。來看專家怎麼判斷。"
+    aha:
+      en: |-
+        Three things can be quantized, and they buy different things:
+
+        - **Weights** (W8, W4: AWQ, GPTQ, NVFP4, MXFP4). Fewer bytes to stream per decode step means faster memory-bound decode, and the model fits on fewer GPUs.
+        - **Activations** (W8A8 FP8/INT8). Lets the matmul itself run in low precision, so compute-bound prefill gets faster on GPUs with FP8 tensor cores.
+        - **KV cache** (`--kv-cache-dtype fp8`). Half the KV bytes means about 2× the tokens in memory, so you get bigger batches and longer contexts.
+
+        Formats come and go with hardware: FP8 on Hopper/MI300-class, FP4 variants (NVFP4, MXFP4) on Blackwell/MI355-class. The rule never changes: **measure accuracy on your task**, not just perplexity, and benchmark with your real batch sizes.
+      zh: |-
+        可以量化的東西有三種，各自換到不同的好處：
+
+        - **權重**（W8、W4：AWQ、GPTQ、NVFP4、MXFP4）。每個 decode 步驟要搬的 bytes 變少 → 受限於記憶體的 decode 變快，模型也能塞進更少的 GPU。
+        - **激活值**（W8A8 FP8/INT8）。讓矩陣乘法本身用低精度執行 → 在有 FP8 tensor core 的 GPU 上，受限於算力的 prefill 變快。
+        - **KV cache**（`--kv-cache-dtype fp8`）。KV bytes 減半 → 記憶體裡能放約 2 倍的 token，batch 更大、context 更長。
+
+        格式會隨著硬體世代更替：FP8 用在 Hopper/MI300 這一代，FP4 變體（NVFP4、MXFP4）用在 Blackwell/MI355 這一代。原則永遠不變：**在你自己的任務上量準確度**，不要只看 perplexity，而且要用真實的 batch size 做 benchmark。
+    tldr:
+      en:
+        - "Weight-only quant speeds up memory-bound decode and shrinks the footprint."
+        - "Weight+activation quant (W8A8) speeds up compute-bound work on supporting hardware."
+        - "FP8 KV cache roughly doubles how many tokens fit, but always re-check task accuracy."
+      zh:
+        - "只量化權重：加速受限於記憶體的 decode，縮小佔用空間。"
+        - "權重 + 激活值量化（W8A8）：在支援的硬體上加速受限於算力的工作。"
+        - "FP8 KV cache 大約讓可容納的 token 加倍，但一定要重新檢查任務準確度。"
+    pro:
+      en: "I separate weight, activation and KV-cache quantization because they target different bottlenecks. Weight-only W4 or W8 reduces bytes per decode step and model footprint. W8A8 FP8 accelerates GEMMs on hardware with FP8 tensor cores. FP8 KV doubles cache capacity for longer contexts or larger batches. I'd validate with task-level evals such as GSM8K or the customer's own eval, check calibration and scale granularity, and benchmark at production batch sizes, since low-bit kernels can lose at large batch."
+      zh: "我會把權重、激活值與 KV cache 量化分開看，因為它們針對不同瓶頸。只量化權重（W4 或 W8）降低每個 decode 步驟的 bytes 與模型大小；W8A8 FP8 在有 FP8 tensor core 的硬體上加速 GEMM；FP8 KV 讓 cache 容量加倍，可支援更長 context 或更大 batch。驗證時我會用任務層級的評測（例如 GSM8K 或客戶自己的評測），檢查校準與 scale 粒度，並在生產 batch size 下做 benchmark，因為低位元 kernel 在大 batch 時可能反而比較慢。"
+    followup:
+      en: "Your W4A16 model is faster at batch 1 but slower at batch 128. Why?"
+      zh: "你的 W4A16 模型在 batch 1 比較快，但在 batch 128 反而比較慢。為什麼？"
+    lab: Q4
+    lab_hint:
+      en: "`/kvcalc model:llama-3.1-70b context:131072 dtype:fp8`: see how many more users fit."
+      zh: "`/kvcalc model:llama-3.1-70b context:131072 dtype:fp8`：看看能多塞幾個使用者。"
+    deep_dive: course/part3/13-quantization-and-speculation.md
+    code: [quantization]
+  - id: E19
+    season: S4
+    minutes: 25
+    title:
+      en: "TP, PP, DP, EP: four ways to split a giant model"
+      zh: "TP、PP、DP、EP：切開巨型模型的四種刀法"
+    hook:
+      en: "A trillion-parameter MoE doesn't fit on one GPU, or even one server. How you cut it decides your latency, your throughput and your cloud bill."
+      zh: "一兆參數的 MoE 一張 GPU 放不下，甚至一台伺服器都放不下。怎麼切，決定你的延遲、吞吐量和雲端帳單。"
+    aha:
+      en: |-
+        - **TP (tensor parallel):** split every layer's matrices across GPUs; all-reduce after each block. Lowers latency but is chatty, so keep it inside an NVLink/xGMI domain. `--tensor-parallel-size`
+        - **PP (pipeline parallel):** split *layers* into stages across GPUs or nodes. Less communication, but you get pipeline bubbles. `--pipeline-parallel-size`
+        - **DP (data parallel):** full replicas serving different requests. Scales throughput, not single-request latency. `--data-parallel-size`
+        - **EP (expert parallel):** spread MoE **experts** across GPUs; tokens travel by all-to-all to their experts. Usually paired with DP attention for DeepSeek/Kimi-class models. `--enable-expert-parallel`
+
+        Long contexts add **context parallelism**, which splits the sequence itself. Real deployments combine these, e.g. DP attention + EP experts across a whole rack.
+      zh: |-
+        - **TP（tensor parallel）：** 把每一層的矩陣切到多張 GPU；每個區塊後做 all-reduce。降低延遲但通訊頻繁，最好留在同一個 NVLink/xGMI 範圍內。`--tensor-parallel-size`
+        - **PP（pipeline parallel）：** 把*層*切成多個階段，分到不同 GPU 或節點。通訊較少，但會有 pipeline 氣泡。`--pipeline-parallel-size`
+        - **DP（data parallel）：** 完整副本服務不同請求。擴展吞吐量，不改善單一請求延遲。`--data-parallel-size`
+        - **EP（expert parallel）：** 把 MoE 的 **experts** 分散到多張 GPU；token 透過 all-to-all 送到對應的 expert。對 DeepSeek/Kimi 等級的模型，通常搭配 DP attention。`--enable-expert-parallel`
+
+        長 context 還有 **context parallelism**，把序列本身切開。真實部署會混搭，例如整個機櫃上用 DP attention + EP experts。
+    tldr:
+      en:
+        - "TP splits matrices (low latency, needs fast interconnect); PP splits layers (bubbles)."
+        - "DP replicates for throughput; EP distributes MoE experts with all-to-all traffic."
+        - "Big MoE serving = DP attention + EP experts (+ context parallelism for long prompts)."
+      zh:
+        - "TP 切矩陣（延遲低，需要高速互連）；PP 切層（會有氣泡）。"
+        - "DP 用副本換吞吐量；EP 用 all-to-all 通訊分散 MoE experts。"
+        - "大型 MoE 服務 = DP attention + EP experts（長 prompt 再加 context parallelism）。"
+    pro:
+      en: "I'd choose TP within a node to cut per-token latency and fit weights, since its per-layer all-reduces need NVLink-class bandwidth. PP goes across nodes when the model still doesn't fit, accepting bubbles. DP replicas scale throughput. For MoE, expert parallelism shards experts with all-to-all dispatch and combine, typically with data-parallel attention so KV isn't replicated, plus load balancing like EPLB for hot experts. Then I verify with the KV math how many concurrent sequences each layout supports."
+      zh: "我會在節點內用 TP 降低每個 token 的延遲並放得下權重，因為它每層的 all-reduce 需要 NVLink 等級的頻寬；模型還是放不下時，跨節點用 PP，接受氣泡；用 DP 副本擴展吞吐量。對 MoE，用 expert parallelism 搭配 all-to-all 的 dispatch/combine 分散 experts，通常再配上 data-parallel attention 避免 KV 被複製，並用 EPLB 之類的負載平衡處理熱門 expert。最後用 KV 計算驗證每種配置能支援多少個同時序列。"
+    followup:
+      en: "With TP=8, does each GPU store the full KV cache? What about with DP attention?"
+      zh: "TP=8 時，每張 GPU 存完整的 KV cache 嗎？用 DP attention 呢？"
+    lab: null
+    lab_hint:
+      en: "Draw a rank diagram for 2 nodes × 8 GPUs serving a 1T MoE. Label each arrow: all-reduce or all-to-all? Post it in #show-your-work."
+      zh: "畫出 2 節點 × 8 GPU 服務 1T MoE 的 rank 圖。每個箭頭標上：all-reduce 還是 all-to-all？貼到 #show-your-work。"
+    deep_dive: course/part3/14-parallelism.md
+    code: [parallel_state, fused_moe]
+  - id: E20
+    season: S4
+    minutes: 20
+    title:
+      en: "Disaggregated serving: split prefill and decode like the big labs"
+      zh: "分離部署：像大型實驗室一樣把 prefill 和 decode 拆開"
+    hook:
+      en: "Prefill wants compute. Decode wants memory bandwidth. Make them share a GPU and they fight. The big labs stopped making them share."
+      zh: "Prefill 要算力，decode 要記憶體頻寬。讓它們共用一張 GPU，就會打架。大型實驗室已經不讓它們共用了。"
+    aha:
+      en: |-
+        **Prefill/decode (P/D) disaggregation** runs prompts on *prefill* instances and token generation on *decode* instances. After prefill, the request's KV cache is **transferred** to a decode instance, which continues generating.
+
+        Why bother:
+        - A long prefill never stalls someone else's decode, so ITL stays smooth.
+        - You can scale and parallelize each pool independently: compute-heavy prefill, bandwidth-heavy decode.
+
+        Costs: KV transfer bandwidth (RDMA/NVLink), routing, failure handling.
+
+        In vLLM this goes through **KV connectors**, plugins that subclass `KVConnectorBase_V1`, such as NIXL, Mooncake, LMCache and others. Recent work goes further and splits rendering into a GPU-less frontend and multimodal encoders into their own pool.
+      zh: |-
+        **Prefill/decode（P/D）分離部署**：把 prompt 放在 *prefill* 實例處理，token 生成放在 *decode* 實例。Prefill 完成後，請求的 KV cache 會**傳輸**到 decode 實例繼續生成。
+
+        為什麼值得：
+        - 長 prefill 永遠不會卡住別人的 decode，ITL 保持平順。
+        - 兩個池子可以各自擴展、各自選平行策略：prefill 吃算力，decode 吃頻寬。
+
+        代價：KV 傳輸頻寬（RDMA/NVLink）、路由、故障處理。
+
+        在 vLLM 裡，這透過 **KV connector** 完成。它們是繼承 `KVConnectorBase_V1` 的外掛，例如 NIXL、Mooncake、LMCache 等。最新的方向更進一步：把渲染拆成不需要 GPU 的前端，把多模態 encoder 拆成獨立的池子。
+    tldr:
+      en:
+        - "Prefill pool and decode pool; KV is shipped between them after prefill."
+        - "Removes prefill–decode interference and allows independent scaling."
+        - "vLLM implements the transfer through pluggable KV connectors."
+      zh:
+        - "Prefill 池與 decode 池；prefill 完成後 KV 在兩者之間傳送。"
+        - "消除 prefill 與 decode 的互相干擾，兩邊可以獨立擴展。"
+        - "vLLM 透過可抽換的 KV connector 實作傳輸。"
+    pro:
+      en: "Disaggregated serving separates compute-bound prefill from bandwidth-bound decode onto different instances, transferring the KV cache over a fast interconnect after prefill. That eliminates interference, so TTFT and ITL can be tuned independently with different parallelism and scaling per pool. The price is transfer cost, routing complexity and new failure modes. It pays off at scale with long prompts and strict ITL SLOs; at small scale, chunked prefill on co-located instances is often enough."
+      zh: "分離部署把受限於算力的 prefill 和受限於頻寬的 decode 放到不同實例，prefill 完成後透過高速互連傳送 KV cache。這消除了互相干擾，TTFT 與 ITL 可以分開調整，各池用不同的平行策略與擴展方式。代價是傳輸成本、路由複雜度與新的故障模式。在大規模、長 prompt、ITL SLO 嚴格的情境下划算；規模小的時候，在同一個實例上用 chunked prefill 通常就夠了。"
+    followup:
+      en: "The KV transfer fails halfway. What should the system do, and who owns the blocks?"
+      zh: "KV 傳到一半失敗了。系統該怎麼做？那些 block 歸誰管？"
+    lab: null
+    lab_hint:
+      en: "Draw the sequence diagram: client → router → prefill → KV transfer → decode → client. Mark where each block is owned at each moment."
+      zh: "畫出時序圖：client → router → prefill → KV 傳輸 → decode → client。標出每個時間點 block 由誰擁有。"
+    deep_dive: course/part3/15-kv-transfer.md
+    code: [kv_connector]
+  - id: E21
+    season: S4
+    minutes: 15
+    title:
+      en: "When 80 GB isn't enough: tiered KV offloading"
+      zh: "80 GB 不夠用時：分層 KV offload"
+    hook:
+      en: "AI agents keep huge, growing contexts and come back to them minutes later. Throwing that KV away and recomputing it is burning money. So spill it, don't kill it."
+      zh: "AI agent 會帶著巨大、不斷成長的 context，而且幾分鐘後還會回來用。把那些 KV 丟掉再重算，就是在燒錢。所以：溢出它，不要殺掉它。"
+    aha:
+      en: |-
+        GPU HBM is the fastest and smallest tier. Below it sit CPU DRAM (much bigger), local NVMe (bigger still), and remote or shared stores.
+
+        **KV offloading** moves cold KV blocks down the hierarchy instead of evicting them, and brings them back on a prefix hit. It's usually far cheaper than recomputing a long prefill.
+
+        In vLLM: the `OffloadingConnector`, LMCache integration, host-memory tiers for sparse attention (HiSparse), and connectors to external memory and storage systems.
+
+        Rule of thumb: offloading wins when **transfer time < recompute time**, so long, reused contexts like multi-turn chat, agents and RAG over the same documents benefit most.
+      zh: |-
+        GPU HBM 是最快也最小的一層。下面還有 CPU DRAM（大很多）、本機 NVMe（更大），以及遠端或共享的儲存。
+
+        **KV offload** 把冷的 KV block 往下層搬，而不是直接淘汰；命中前綴時再搬回來。這通常比重新計算一段長 prefill 便宜得多。
+
+        在 vLLM 裡：`OffloadingConnector`、LMCache 整合、給稀疏 attention 用的主機記憶體層（HiSparse），以及連到外部記憶體與儲存系統的 connector。
+
+        經驗法則：**傳輸時間 < 重算時間**時 offload 就划算，所以長且會重複使用的 context（多輪對話、agent、對同一批文件做 RAG）受益最大。
+    tldr:
+      en:
+        - "Tiers: GPU HBM → CPU DRAM → local SSD → remote store."
+        - "Offload cold KV instead of evicting; reload on prefix hit."
+        - "Worth it when transfer is faster than recomputing prefill: long, reused contexts."
+      zh:
+        - "分層：GPU HBM → CPU DRAM → 本機 SSD → 遠端儲存。"
+        - "把冷的 KV 往下搬而不是淘汰；命中前綴時再載回。"
+        - "傳輸比重算 prefill 快時就值得：長且會重複使用的 context。"
+    pro:
+      en: "KV offloading extends the prefix cache beyond HBM by demoting evicted blocks to CPU memory, SSD or a shared store and promoting them on a hit. It's a trade between transfer bandwidth and recompute FLOPs: worth it when re-reading a long prefix beats re-prefilling it, which is typical for multi-turn and agentic workloads. Implementation concerns are async transfers overlapped with compute, consistent block hashing across tiers, and eviction policy per tier."
+      zh: "KV offload 把 prefix cache 延伸到 HBM 之外：被淘汰的 block 降級到 CPU 記憶體、SSD 或共享儲存，命中時再升級回來。這是傳輸頻寬與重算 FLOPs 之間的取捨：當重新讀取長前綴比重新 prefill 快時就值得，這在多輪對話與 agent 工作負載很常見。實作重點：非同步傳輸並與運算重疊、跨層一致的 block hash，以及每一層的淘汰策略。"
+    followup:
+      en: "Rough numbers: 40 GiB of KV over PCIe Gen5 (~50 GB/s effective) vs re-prefilling 128k tokens on an H100. Which wins?"
+      zh: "粗估：40 GiB 的 KV 走 PCIe Gen5（實際約 50 GB/s）vs 在 H100 上重新 prefill 128k token。誰贏？"
+    lab: Q2
+    lab_hint:
+      en: "`python academy/labs/paged_playground.py --scenario offload` shows blocks moving GPU → CPU → back."
+      zh: "`python academy/labs/paged_playground.py --scenario offload` 會顯示 block 從 GPU → CPU → 再搬回來。"
+    deep_dive: phase1/redesign/lessons/15-placement.md
+    code: [kv_offload, kv_connector]
+  - id: E22
+    season: S4
+    minutes: 15
+    title:
+      en: "vLLM is secretly the engine behind RL post-training"
+      zh: "vLLM 其實是 RL 後訓練背後的引擎"
+    hook:
+      en: "Reasoning models learn by generating millions of attempts and getting graded. Generating those attempts is often most of the training time. Guess which engine writes them."
+      zh: "推理模型是靠生成數百萬次嘗試、再被評分學會的。生成這些嘗試往往佔掉大部分的訓練時間。猜猜是哪個引擎在寫它們？"
+    aha:
+      en: |-
+        An RL step (GRPO, PPO…) = **rollout** (generate many answers per prompt) → **score** (reward/verifier) → **update** (gradient step) → **sync** the new weights back to the generator.
+
+        Rollout is pure inference at massive scale, so RL frameworks (verl, OpenRLHF, TRL, SkyRL and others) commonly use vLLM for it.
+
+        This creates new engineering problems that are hot right now:
+        - **Weight sync:** pushing fresh weights to inference engines in seconds (vLLM has native weight-transfer backends, including NCCL- and Ray-based ones).
+        - **Sleep/wake:** freeing GPU memory between rollout and training phases.
+        - **Train–inference mismatch:** tiny numeric differences between trainer and engine logprobs can destabilize RL, so teams are chasing bitwise-consistent kernels.
+      zh: |-
+        一個 RL 步驟（GRPO、PPO…）= **rollout**（每個 prompt 生成很多答案）→ **評分**（reward/verifier）→ **更新**（梯度步驟）→ 把新權重**同步**回生成器。
+
+        Rollout 就是超大規模的推論，所以 RL 框架（verl、OpenRLHF、TRL、SkyRL 等）通常用 vLLM 來做。
+
+        這帶來一批現在正熱門的新工程問題：
+        - **權重同步：** 幾秒內把新權重推到推論引擎（vLLM 有原生的權重傳輸 backend，包含基於 NCCL 與 Ray 的版本）。
+        - **休眠／喚醒：** 在 rollout 與訓練階段之間釋放 GPU 記憶體。
+        - **訓練與推論不一致：** 訓練端與引擎端 logprobs 的微小數值差異可能讓 RL 不穩定，所以大家在追求逐位元一致的 kernel。
+    tldr:
+      en:
+        - "RL post-training = rollout (inference) + scoring + update + weight sync."
+        - "Rollout often dominates step time, and vLLM is a common rollout engine."
+        - "Hot problems: fast weight sync, memory sleep/wake, train–inference numeric consistency."
+      zh:
+        - "RL 後訓練 = rollout（推論）+ 評分 + 更新 + 權重同步。"
+        - "Rollout 往往佔掉大部分步驟時間，而 vLLM 是常見的 rollout 引擎。"
+        - "熱門問題：快速權重同步、記憶體休眠／喚醒、訓練與推論的數值一致性。"
+    pro:
+      en: "In RL post-training the rollout phase is high-throughput sampling, so frameworks embed an inference engine like vLLM. The engineering challenges are fast weight synchronization from trainer to engine after each update, releasing and restoring GPU memory between phases, and controlling numerical mismatch between trainer and sampler logprobs, which biases importance ratios. Throughput tricks like continuous batching, prefix caching for shared prompts and long-tail handling translate directly into faster RL."
+      zh: "在 RL 後訓練中，rollout 階段就是高吞吐量的抽樣，所以框架會內嵌 vLLM 這類推論引擎。工程挑戰包括：每次更新後從訓練端快速同步權重到引擎、在階段之間釋放與恢復 GPU 記憶體，以及控制訓練端與抽樣端 logprobs 的數值不一致（它會讓 importance ratio 產生偏差）。Continuous batching、共用 prompt 的 prefix caching、長尾處理等吞吐量技巧，都能直接讓 RL 跑得更快。"
+    followup:
+      en: "Why does the long tail of very long rollouts hurt RL throughput, and what can the engine do about it?"
+      zh: "為什麼少數超長 rollout 的長尾會拖慢 RL 吞吐量？引擎可以怎麼處理？"
+    lab: null
+    lab_hint:
+      en: "Open the `weight_transfer` code-map entry and find the backend list. Post one sentence on what each one does."
+      zh: "打開 code map 的 `weight_transfer` 條目，找到 backend 清單。用一句話說明每一個在做什麼。"
+    deep_dive: phase1/redesign/lessons/17-contribution.md
+    code: [weight_transfer, rl_entrypoints]

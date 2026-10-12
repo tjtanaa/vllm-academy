@@ -1,0 +1,799 @@
+# Interview bank. Levels: junior | mid | senior. Kinds: concept | design | coding | debug | behavioral.
+# `points` are what a strong answer covers. Used by /interview and /mock.
+interview:
+  - id: iv-01
+    level: junior
+    kind: concept
+    episode: E05
+    q:
+      en: "Why is prefill usually compute-bound while decode is memory-bandwidth-bound?"
+      zh: "為什麼 prefill 通常受限於算力，而 decode 受限於記憶體頻寬？"
+    points:
+      en:
+        - "Prefill processes many tokens per weight load, so arithmetic intensity is high (a big GEMM)."
+        - "Decode processes one token per sequence per step: ~2 FLOPs per weight byte pair, intensity ≈ batch size."
+        - "GPU ridge point is hundreds of FLOPs/byte, so small-batch decode can't saturate compute."
+        - "Consequence: decode time ≈ (weights + KV bytes) / HBM bandwidth; batching and quantization help."
+      zh:
+        - "Prefill 每次載入權重會處理很多 token，算術強度高（大型 GEMM）。"
+        - "Decode 每一步每個序列只處理一個 token：每個權重約 2 FLOP，算術強度約等於 batch size。"
+        - "GPU 的轉折點是每 byte 數百個 FLOP，小 batch 的 decode 無法吃滿算力。"
+        - "結論：decode 時間 ≈（權重 + KV bytes）/ HBM 頻寬；批次與量化有幫助。"
+    followups:
+      en: ["Estimate tokens/s for an 8B model at batch 1 on an H100.", "What grows with batch size that eventually limits you?"]
+      zh: ["估算 8B 模型在 H100、batch 1 的每秒 token 數。", "什麼東西會隨 batch size 變大，最後限制你？"]
+    red_flags:
+      en: ["Says decode is slow because 'the model is big' without mentioning bandwidth.", "Confuses FLOPs with bytes."]
+      zh: ["只說 decode 慢是因為「模型很大」，沒提到頻寬。", "把 FLOPs 和 bytes 搞混。"]
+  - id: iv-02
+    level: junior
+    kind: concept
+    episode: E07
+    q:
+      en: "Compute the KV-cache size per token for Llama-3.1-8B (32 layers, 8 KV heads, head_dim 128, bf16). How many 32k-token sequences fit in 40 GB of free memory?"
+      zh: "計算 Llama-3.1-8B（32 層、8 個 KV heads、head_dim 128、bf16）每個 token 的 KV cache 大小。40 GB 空閒記憶體能放幾個 32k token 的序列？"
+    points:
+      en:
+        - "2 × 32 × 8 × 128 × 2 B = 131,072 B = 128 KiB per token."
+        - "32,768 tokens × 128 KiB = 4 GiB per sequence."
+        - "40 GB ≈ 37.25 GiB → about 9 full sequences (fewer with block rounding and overhead)."
+        - "Mentions GQA (32 query heads but 8 KV heads) and FP8 KV to double capacity."
+      zh:
+        - "2 × 32 × 8 × 128 × 2 B = 131,072 B = 每個 token 128 KiB。"
+        - "32,768 個 token × 128 KiB = 每個序列 4 GiB。"
+        - "40 GB ≈ 37.25 GiB → 大約 9 個滿長度序列（考慮 block 進位與額外開銷會更少）。"
+        - "提到 GQA（32 個 query heads，但只有 8 個 KV heads），以及用 FP8 KV 讓容量加倍。"
+    followups:
+      en: ["What changes with tensor parallelism 2?", "Why might the real number be lower?"]
+      zh: ["改成 tensor parallelism 2 會有什麼變化？", "為什麼實際數字可能更低？"]
+    red_flags:
+      en: ["Uses query heads.", "Forgets the factor of 2 for K and V."]
+      zh: ["用 query heads 計算。", "忘了 K 和 V 要乘 2。"]
+  - id: iv-03
+    level: junior
+    kind: concept
+    episode: E08
+    q:
+      en: "Explain PagedAttention and why it improves throughput."
+      zh: "說明 PagedAttention，以及它為什麼能提高吞吐量。"
+    points:
+      en:
+        - "Contiguous per-request KV reservation causes internal/external fragmentation and over-reservation."
+        - "KV split into fixed-size blocks; per-request block table maps logical → physical blocks."
+        - "Allocate on demand: waste ≤ one partial block per sequence → more concurrent sequences → bigger batches."
+        - "Ref-counted blocks enable sharing (prefix caching, parallel sampling) and copy-on-write."
+        - "Kernels gather K/V through the block table."
+      zh:
+        - "每個請求預留連續的 KV 空間，會造成內部/外部碎片與過度預留。"
+        - "把 KV 切成固定大小的 block；每個請求的 block table 把邏輯 block 對應到實體 block。"
+        - "需要時才配置：每個序列最多浪費一個未滿的 block → 更多同時序列 → 更大的 batch。"
+        - "參照計數讓 block 可以共享（prefix caching、平行抽樣）並支援 copy-on-write。"
+        - "Kernel 透過 block table 收集 K/V。"
+    followups:
+      en: ["Block size trade-offs?", "What does the attention kernel need to know per sequence?"]
+      zh: ["Block size 的取捨？", "Attention kernel 對每個序列需要知道什麼？"]
+    red_flags:
+      en: ["Thinks paging reduces the KV size per token.", "Describes it as offloading to disk."]
+      zh: ["以為分頁會縮小每個 token 的 KV 大小。", "把它描述成卸載到磁碟。"]
+  - id: iv-04
+    level: junior
+    kind: concept
+    episode: E09
+    q:
+      en: "What is continuous batching, and how is it different from static batching?"
+      zh: "什麼是 continuous batching？它和 static batching 有什麼不同？"
+    points:
+      en:
+        - "Static: fixed batch runs to completion; short requests wait for the longest."
+        - "Continuous: scheduling decisions every iteration; finished sequences leave, new ones join."
+        - "Higher GPU utilization and throughput, lower queueing delay."
+        - "Needs dynamic KV memory management (paging) to admit requests flexibly."
+      zh:
+        - "Static：固定批次跑到全部完成；短請求要等最長的。"
+        - "Continuous：每個迭代都做排程決策；完成的序列離開、新的加入。"
+        - "GPU 使用率與吞吐量更高，排隊延遲更低。"
+        - "需要動態的 KV 記憶體管理（分頁）才能彈性接收請求。"
+    followups:
+      en: ["What happens when memory runs out?", "How do prefill and decode share a step?"]
+      zh: ["記憶體用完時會怎樣？", "Prefill 和 decode 怎麼共用同一步？"]
+    red_flags:
+      en: ["Confuses it with dynamic batching by timeout only."]
+      zh: ["把它和「只靠逾時」的 dynamic batching 搞混。"]
+  - id: iv-05
+    level: junior
+    kind: concept
+    episode: E01
+    q:
+      en: "Explain temperature, top-k and top-p sampling. When would you use greedy decoding?"
+      zh: "說明 temperature、top-k 與 top-p 抽樣。什麼時候會用 greedy decoding？"
+    points:
+      en:
+        - "Temperature scales logits before softmax: <1 sharper, >1 flatter."
+        - "Top-k keeps the k most likely tokens; top-p keeps the smallest set whose cumulative probability ≥ p."
+        - "Greedy (argmax) for deterministic tasks, evals, extraction; sampling for diversity."
+        - "Seeds and batch invariance affect reproducibility in serving."
+      zh:
+        - "Temperature 在 softmax 前縮放 logits：<1 更尖銳，>1 更平坦。"
+        - "Top-k 保留機率最高的 k 個 token；top-p 保留累積機率 ≥ p 的最小集合。"
+        - "確定性任務、評測、資訊擷取用 greedy（argmax）；需要多樣性時用抽樣。"
+        - "在服務環境中，seed 與 batch invariance 會影響可重現性。"
+    followups:
+      en: ["Why might greedy outputs differ between batch sizes on a GPU?"]
+      zh: ["為什麼在 GPU 上，不同 batch size 的 greedy 輸出可能不一樣？"]
+    red_flags:
+      en: ["Says temperature changes model weights."]
+      zh: ["說 temperature 會改變模型權重。"]
+  - id: iv-06
+    level: mid
+    kind: concept
+    episode: E10
+    q:
+      en: "How does automatic prefix caching work, and how would you maximize its hit rate in a multi-replica deployment?"
+      zh: "Automatic prefix caching 怎麼運作？在多副本部署中你會怎麼提高命中率？"
+    points:
+      en:
+        - "Hash full blocks with parent hash (+ extra keys like LoRA/mm); lookup longest cached prefix chain."
+        - "Freed blocks stay hittable until evicted (LRU-ish free queue)."
+        - "Prompt design: stable content first, variable last; avoid timestamps/IDs at the start."
+        - "Routing: prefix/cache-aware load balancing or session affinity instead of round-robin."
+        - "Measure hit rate via metrics; consider KV offload to extend capacity."
+      zh:
+        - "對填滿的 block 連同上一個 block 的 hash（加上 LoRA/多模態等額外 key）做 hash；查找最長的已快取前綴鏈。"
+        - "釋放的 block 在被淘汰前仍能命中（類 LRU 的空閒佇列）。"
+        - "Prompt 設計：固定內容放前面、變動內容放後面；不要把時間戳記或 ID 放開頭。"
+        - "路由：用感知前綴/快取的負載平衡或 session affinity，而不是輪詢。"
+        - "用指標量測命中率；考慮用 KV offload 擴充容量。"
+    followups:
+      en: ["Security: can prefix caching leak information across tenants?"]
+      zh: ["安全性：prefix caching 會不會在不同租戶之間洩漏資訊？"]
+    red_flags:
+      en: ["Thinks it caches final answers (response caching)."]
+      zh: ["以為它快取的是最終答案（回應快取）。"]
+  - id: iv-07
+    level: mid
+    kind: concept
+    episode: E11
+    q:
+      en: "What is chunked prefill and how do max_num_batched_tokens and max_num_seqs affect latency?"
+      zh: "什麼是 chunked prefill？max_num_batched_tokens 和 max_num_seqs 如何影響延遲？"
+    points:
+      en:
+        - "Long prefills split into chunks co-scheduled with decodes under a per-step token budget."
+        - "Small budget: smoother ITL, slower TTFT for long prompts, maybe lower throughput."
+        - "Large budget: faster prefill, risk of ITL spikes."
+        - "max_num_seqs caps concurrent sequences, which bounds batch size and KV demand."
+      zh:
+        - "長 prefill 被切成多段，在每一步的 token 預算內和 decode 一起排程。"
+        - "預算小：ITL 更平順，但長 prompt 的 TTFT 變慢，吞吐量也可能下降。"
+        - "預算大：prefill 更快，但 ITL 可能出現尖峰。"
+        - "max_num_seqs 限制同時序列數，也就限制了 batch size 與 KV 需求。"
+    followups:
+      en: ["How would you tune for a chat app vs a batch summarization job?"]
+      zh: ["聊天 App 和批次摘要工作，你會怎麼分別調整？"]
+    red_flags:
+      en: ["Thinks chunking reduces total compute."]
+      zh: ["以為切塊會減少總運算量。"]
+  - id: iv-08
+    level: mid
+    kind: concept
+    episode: E17
+    q:
+      en: "Walk through speculative decoding. When does it help and when does it hurt?"
+      zh: "完整說明 speculative decoding。什麼時候有幫助？什麼時候反而有害？"
+    points:
+      en:
+        - "Drafter proposes k tokens; target verifies in one forward; accept longest matching prefix + bonus token."
+        - "Rejection sampling keeps the target distribution exactly."
+        - "Speedup ≈ f(acceptance rate, k, draft cost); best when memory-bound (low batch)."
+        - "Hurts at high batch or low acceptance; tune k or disable dynamically."
+        - "Methods: n-gram, EAGLE/EAGLE-3, MTP, draft models, Medusa, suffix decoding."
+      zh:
+        - "草稿模型提出 k 個 token；目標模型一次 forward 驗證；接受最長相符前綴並加上一個額外 token。"
+        - "Rejection sampling 精確保留目標模型的分布。"
+        - "加速 ≈ f（接受率、k、草稿成本）；受限於記憶體（小 batch）時效果最好。"
+        - "大 batch 或接受率低時反而有害；調整 k 或動態關閉。"
+        - "方法：n-gram、EAGLE/EAGLE-3、MTP、草稿模型、Medusa、suffix decoding。"
+    followups:
+      en: ["How does it interact with the KV cache for rejected tokens?"]
+      zh: ["被拒絕的 token 和 KV cache 之間要怎麼處理？"]
+    red_flags:
+      en: ["Claims it changes output quality.", "Can't explain why verification is cheap."]
+      zh: ["說它會改變輸出品質。", "無法解釋為什麼驗證很便宜。"]
+  - id: iv-09
+    level: mid
+    kind: concept
+    episode: E18
+    q:
+      en: "Compare weight-only INT4/FP4, W8A8 FP8, and FP8 KV-cache quantization. What does each buy you?"
+      zh: "比較只量化權重的 INT4/FP4、W8A8 FP8，以及 FP8 KV cache 量化。各自帶來什麼好處？"
+    points:
+      en:
+        - "Weight-only: fewer bytes per decode step and a smaller footprint; dequantize in kernel."
+        - "W8A8: low-precision GEMM on supporting tensor cores, which speeds up compute-bound prefill and large batches."
+        - "FP8 KV: about 2× KV capacity, so longer contexts and bigger batches; check accuracy at long context."
+        - "Validate with task evals; benchmark at real batch sizes; hardware support matters."
+      zh:
+        - "只量化權重：每個 decode 步驟 bytes 更少、佔用更小；在 kernel 中反量化。"
+        - "W8A8：在支援的 tensor core 上做低精度 GEMM，加速受限於算力的 prefill 與大 batch。"
+        - "FP8 KV：KV 容量約 2 倍，可支援更長 context、更大 batch；要檢查長 context 下的準確度。"
+        - "用任務評測驗證；在真實 batch size 下 benchmark；硬體支援很重要。"
+    followups:
+      en: ["Why can W4A16 lose to FP16 at batch 256?"]
+      zh: ["為什麼 W4A16 在 batch 256 時可能輸給 FP16？"]
+    red_flags:
+      en: ["'Quantization is always faster.'"]
+      zh: ["「量化一定比較快。」"]
+  - id: iv-10
+    level: mid
+    kind: concept
+    episode: E19
+    q:
+      en: "How do you choose between TP=2 and TP=4 for a model that fits on two GPUs?"
+      zh: "一個放得進兩張 GPU 的模型，你會怎麼在 TP=2 和 TP=4 之間選擇？"
+    points:
+      en:
+        - "TP=4 lowers per-token latency (less work per GPU) but adds all-reduce cost per layer."
+        - "TP=4 frees more memory for KV, so more concurrent sequences."
+        - "Alternative: 2 replicas of TP=2 (DP) often gives more throughput for the same 4 GPUs."
+        - "Depends on SLO (latency vs throughput), interconnect, batch size; measure both."
+      zh:
+        - "TP=4 每張 GPU 的工作更少，單 token 延遲更低，但每層多了 all-reduce 成本。"
+        - "TP=4 釋放更多記憶體給 KV → 可以有更多同時序列。"
+        - "替代方案：同樣 4 張 GPU 跑 2 個 TP=2 副本（DP），吞吐量往往更高。"
+        - "取決於 SLO（延遲 vs 吞吐量）、互連、batch size；兩種都要量。"
+    followups:
+      en: ["What if the GPUs are connected only via PCIe?"]
+      zh: ["如果 GPU 之間只有 PCIe 連接呢？"]
+    red_flags:
+      en: ["'More TP is always better.'"]
+      zh: ["「TP 越多一定越好。」"]
+  - id: iv-11
+    level: senior
+    kind: concept
+    episode: E19
+    q:
+      en: "How would you serve a large MoE model (hundreds of experts, ~1T params) across multiple nodes?"
+      zh: "你會怎麼跨多個節點服務一個大型 MoE 模型（數百個 expert、約 1T 參數）？"
+    points:
+      en:
+        - "Expert parallelism across GPUs with all-to-all dispatch/combine; data-parallel attention to avoid KV replication."
+        - "Expert load balancing (EPLB / redundant hot experts); capacity and token-dropping considerations."
+        - "Communication backends tuned for all-to-all; overlap compute and comms (dual-batch overlap)."
+        - "Possibly P/D disaggregation with different parallelism per pool; MLA/compressed KV if the model supports it."
+        - "Memory math for weights per GPU + KV per DP rank."
+      zh:
+        - "跨 GPU 用 expert parallelism，搭配 all-to-all dispatch/combine；用 data-parallel attention 避免 KV 被複製。"
+        - "Expert 負載平衡（EPLB／複製熱門 expert）；容量與丟 token 的考量。"
+        - "針對 all-to-all 調校的通訊 backend；運算與通訊重疊（dual-batch overlap）。"
+        - "可能使用 P/D 分離部署，各池用不同平行策略；若模型支援，用 MLA／壓縮 KV。"
+        - "計算每張 GPU 的權重記憶體 + 每個 DP rank 的 KV。"
+    followups:
+      en: ["What's the failure mode if one expert is extremely popular?"]
+      zh: ["如果某個 expert 超級熱門，會出現什麼故障模式？"]
+    red_flags:
+      en: ["Proposes pure TP across nodes."]
+      zh: ["提議跨節點只用 TP。"]
+  - id: iv-12
+    level: senior
+    kind: concept
+    episode: E20
+    q:
+      en: "When is prefill/decode disaggregation worth its complexity?"
+      zh: "Prefill/decode 分離部署什麼時候值得它帶來的複雜度？"
+    points:
+      en:
+        - "When prefill interference breaks ITL SLOs (long prompts, high load), and at scale where pools can be sized independently."
+        - "Requires fast KV transfer (RDMA/NVLink); transfer time must be small relative to prefill."
+        - "Different parallelism per pool (e.g. more TP for prefill, more DP/EP for decode)."
+        - "Costs: routing, failure handling, KV ownership, operational complexity. Small deployments: chunked prefill first."
+      zh:
+        - "當 prefill 干擾讓 ITL SLO 無法達成（長 prompt、高負載），以及在規模夠大、兩個池可以分別調整大小時。"
+        - "需要快速的 KV 傳輸（RDMA/NVLink）；傳輸時間要遠小於 prefill 時間。"
+        - "兩個池用不同的平行策略（例如 prefill 多用 TP，decode 多用 DP/EP）。"
+        - "代價：路由、故障處理、KV 所有權、營運複雜度。小型部署先用 chunked prefill。"
+    followups:
+      en: ["How do you size the ratio of prefill to decode instances?"]
+      zh: ["prefill 與 decode 實例的比例要怎麼決定？"]
+    red_flags:
+      en: ["Ignores KV transfer cost."]
+      zh: ["忽略 KV 傳輸成本。"]
+  - id: iv-13
+    level: mid
+    kind: concept
+    episode: E15
+    q:
+      en: "What are CUDA graphs and torch.compile used for in an inference engine?"
+      zh: "推論引擎中，CUDA graph 和 torch.compile 是用來做什麼的？"
+    points:
+      en:
+        - "Decode steps are short; CPU-side kernel launch and Python overhead can dominate."
+        - "CUDA graphs capture a sequence of kernels for fixed shapes and replay them with one launch."
+        - "Engines capture graphs for a set of batch sizes and pad to the nearest one."
+        - "torch.compile traces the model and applies fusions (e.g. norm+quant, activation fusions) and custom passes."
+      zh:
+        - "Decode 步驟很短；CPU 端的 kernel 發射與 Python 開銷可能佔大宗。"
+        - "CUDA graph 針對固定形狀擷取一連串 kernel，之後一次發射就能重播。"
+        - "引擎會針對一組 batch size 擷取 graph，再補齊（pad）到最接近的大小。"
+        - "torch.compile 追蹤模型並套用融合（例如 norm+quant、激活函數融合）與客製最佳化。"
+    followups:
+      en: ["What breaks CUDA-graph capture?"]
+      zh: ["什麼情況會讓 CUDA graph 擷取失敗？"]
+    red_flags:
+      en: ["Thinks CUDA graphs make kernels themselves faster."]
+      zh: ["以為 CUDA graph 會讓 kernel 本身變快。"]
+  - id: iv-14
+    level: mid
+    kind: concept
+    episode: E03
+    q:
+      en: "Why is FlashAttention fast if it does the same math as standard attention?"
+      zh: "FlashAttention 和標準 attention 做的數學一樣，為什麼它比較快？"
+    points:
+      en:
+        - "Standard attention materializes the N×N score matrix in HBM: memory traffic dominates."
+        - "FlashAttention tiles Q/K/V into on-chip SRAM, uses online softmax, never writes the full matrix."
+        - "IO-aware: fewer HBM reads/writes; exact result, not an approximation."
+        - "Decode variants (paged, split-KV) parallelize over the KV length."
+      zh:
+        - "標準 attention 會在 HBM 中具體化 N×N 的分數矩陣：記憶體流量佔大宗。"
+        - "FlashAttention 把 Q/K/V 切塊放進晶片上的 SRAM，用 online softmax，從不寫出完整矩陣。"
+        - "IO-aware：HBM 讀寫更少；結果是精確的，不是近似。"
+        - "Decode 版本（分頁、split-KV）會沿著 KV 長度平行化。"
+    followups:
+      en: ["Why is decode attention harder to parallelize than prefill attention?"]
+      zh: ["為什麼 decode 的 attention 比 prefill 的更難平行化？"]
+    red_flags:
+      en: ["Calls it an approximation."]
+      zh: ["說它是近似演算法。"]
+  - id: iv-15
+    level: senior
+    kind: concept
+    episode: E07
+    q:
+      en: "Compare MHA, GQA, MQA and MLA from a serving perspective."
+      zh: "從服務的角度比較 MHA、GQA、MQA 與 MLA。"
+    points:
+      en:
+        - "MHA: KV heads = query heads → largest KV."
+        - "MQA: one shared KV head → smallest KV, possible quality loss; awkward with TP (replication)."
+        - "GQA: groups of query heads share KV heads, a middle ground; most modern models use it."
+        - "MLA: caches a compressed latent per token (plus RoPE part), very small KV; needs specialized kernels; absorbed projections in decode."
+        - "Impacts max batch, long context, TP sharding (KV heads < TP size → replication)."
+      zh:
+        - "MHA：KV heads = query heads → KV 最大。"
+        - "MQA：只有一個共用 KV head → KV 最小，可能損失品質；搭配 TP 時不好切（需要複製）。"
+        - "GQA：一組 query heads 共用一個 KV head，折衷方案；大多數現代模型採用。"
+        - "MLA：每個 token 快取一個壓縮的 latent（加上 RoPE 部分），KV 非常小；需要專用 kernel；decode 時會吸收投影矩陣。"
+        - "影響最大 batch、長 context、TP 切分（KV heads 少於 TP 大小時需要複製）。"
+    followups:
+      en: ["With 8 KV heads and TP=16, what happens to the KV cache?"]
+      zh: ["8 個 KV heads 搭配 TP=16，KV cache 會發生什麼事？"]
+    red_flags:
+      en: ["Can't relate head structure to memory."]
+      zh: ["無法把 head 結構和記憶體連結起來。"]
+  - id: iv-16
+    level: senior
+    kind: design
+    episode: E25
+    q:
+      en: "Design a service to serve a 70B model on 4× A100 80GB for an internal chat product. Walk me through it."
+      zh: "設計一個用 4× A100 80GB 服務 70B 模型的內部聊天產品。請完整說明。"
+    points:
+      en:
+        - "Clarify: QPS, prompt/output lengths, TTFT/ITL SLOs, context max."
+        - "Weights bf16 ≈ 140 GB → TP=4 (one replica); or FP8 weights ≈ 70 GB → maybe 2× TP=2 replicas (A100 lacks FP8 tensor cores, so weight-only INT8/INT4 instead)."
+        - "KV math: 320 KiB/token → remaining memory / KV per token = total token capacity → concurrent users at the target context."
+        - "Continuous batching, chunked prefill, prefix caching for the shared system prompt."
+        - "OpenAI-compatible API, streaming, rate limiting, metrics (TTFT/ITL p99, KV usage, queue), autoscaling limits."
+      zh:
+        - "先釐清：QPS、prompt/輸出長度、TTFT/ITL SLO、最大 context。"
+        - "權重 bf16 ≈ 140 GB → TP=4（一個副本）；或 FP8 權重 ≈ 70 GB → 也許 2 個 TP=2 副本（A100 沒有 FP8 tensor core，所以改用只量化權重的 INT8/INT4）。"
+        - "KV 計算：每 token 320 KiB → 剩餘記憶體 / 每 token KV = 總 token 容量 → 目標 context 下的同時使用者數。"
+        - "Continuous batching、chunked prefill、對共用 system prompt 做 prefix caching。"
+        - "相容 OpenAI 的 API、串流、限流、指標（TTFT/ITL p99、KV 使用率、佇列）、自動擴展上限。"
+    followups:
+      en: ["Traffic triples. What do you do?", "A user sends 120k tokens. What happens to everyone else?"]
+      zh: ["流量變成三倍，你會怎麼做？", "某個使用者送了 12 萬 token，其他人會怎樣？"]
+    red_flags:
+      en: ["No numbers.", "Ignores KV memory."]
+      zh: ["沒有任何數字。", "忽略 KV 記憶體。"]
+  - id: iv-17
+    level: senior
+    kind: design
+    episode: E25
+    q:
+      en: "How would you estimate the maximum throughput of an inference server for a given model and GPU count before running anything?"
+      zh: "在實際執行之前，你會怎麼估算某個模型在特定 GPU 數量下的推論伺服器最大吞吐量？"
+    points:
+      en:
+        - "Decode step time ≈ (weight bytes / bandwidth) + (KV bytes read / bandwidth), with weights amortized over the batch."
+        - "Max batch bounded by KV capacity: (free memory) / (KV per token × avg context)."
+        - "Output tokens/s ≈ batch / step time; check against compute roofline (2 × params × batch FLOPs per step)."
+        - "Prefill cost: 2 × params × prompt tokens FLOPs, so it's compute-bound."
+        - "Then validate with a benchmark sweep; expect efficiency well below the peak."
+      zh:
+        - "Decode 步驟時間 ≈（權重 bytes / 頻寬）+（讀取的 KV bytes / 頻寬），權重成本由整個 batch 分攤。"
+        - "最大 batch 受 KV 容量限制：（空閒記憶體）/（每 token KV × 平均 context）。"
+        - "每秒輸出 token ≈ batch / 步驟時間；再用算力 roofline 檢查（每步 2 × 參數量 × batch FLOPs）。"
+        - "Prefill 成本：2 × 參數量 × prompt token 數的 FLOPs → 受限於算力。"
+        - "接著用 benchmark 掃描驗證；實際效率會明顯低於峰值。"
+    followups:
+      en: ["How does average context length change the answer?"]
+      zh: ["平均 context 長度會怎麼影響答案？"]
+    red_flags:
+      en: ["Only uses FLOPs."]
+      zh: ["只用 FLOPs 計算。"]
+  - id: iv-18
+    level: senior
+    kind: design
+    episode: E21
+    q:
+      en: "Design serving for a model with 200k-token contexts (e.g. codebase Q&A agents)."
+      zh: "替一個支援 20 萬 token context 的模型設計服務（例如程式碼庫問答 agent）。"
+    points:
+      en:
+        - "KV per request is huge: compute it, and choose models with GQA/MLA plus FP8 KV."
+        - "Prefill cost dominates: prefix caching, so repeated codebase context is reused; cache-aware routing."
+        - "Chunked prefill or P/D disaggregation to protect other users' ITL; context parallelism for prefill."
+        - "KV offloading to CPU/SSD for idle sessions; admission control by token budget, not request count."
+        - "Long-context accuracy evals; timeouts and cancellation that free blocks."
+      zh:
+        - "每個請求的 KV 很大：先算出來；選擇有 GQA/MLA 的模型並使用 FP8 KV。"
+        - "Prefill 成本佔大宗：用 prefix caching 重複使用相同的程式碼庫 context；搭配感知快取的路由。"
+        - "用 chunked prefill 或 P/D 分離部署保護其他使用者的 ITL；prefill 使用 context parallelism。"
+        - "閒置 session 的 KV offload 到 CPU/SSD；用 token 預算做准入控制，而不是用請求數。"
+        - "做長 context 準確度評測；逾時與取消時要釋放 block。"
+    followups:
+      en: ["How do you price this fairly to customers?"]
+      zh: ["你會怎麼公平地向客戶收費？"]
+    red_flags:
+      en: ["Treats it like a short-context service."]
+      zh: ["把它當成短 context 服務來處理。"]
+  - id: iv-19
+    level: senior
+    kind: design
+    episode: E25
+    q:
+      en: "Build a multi-tenant LLM API with priorities and rate limits. What goes where?"
+      zh: "建立一個有優先權與限流的多租戶 LLM API。各個功能要放在哪一層？"
+    points:
+      en:
+        - "Gateway: auth, per-tenant token-based rate limits (input + output tokens), quotas."
+        - "Router: cache-aware/least-loaded replica selection; tenant isolation for prefix caching if required."
+        - "Engine: priority scheduling (vLLM supports a priority policy), preemption behavior, max_num_seqs."
+        - "Multi-LoRA if tenants have adapters; fairness and starvation prevention."
+        - "Observability per tenant: TTFT/ITL percentiles, tokens, errors; SLO-based admission."
+      zh:
+        - "Gateway：驗證、每個租戶以 token 計的限流（輸入 + 輸出）、配額。"
+        - "Router：感知快取／最低負載的副本選擇；必要時對 prefix caching 做租戶隔離。"
+        - "Engine：優先權排程（vLLM 支援 priority 策略）、搶占行為、max_num_seqs。"
+        - "如果租戶有自己的 adapter，用 multi-LoRA；公平性與防止餓死。"
+        - "每個租戶的可觀測性：TTFT/ITL 百分位數、token 數、錯誤；以 SLO 為基礎的准入控制。"
+    followups:
+      en: ["A low-priority tenant is starving. What do you change?"]
+      zh: ["低優先權的租戶餓死了，你會改什麼？"]
+    red_flags:
+      en: ["Rate limits by request count only."]
+      zh: ["只用請求數限流。"]
+  - id: iv-20
+    level: mid
+    kind: design
+    episode: E24
+    q:
+      en: "Design a streaming server that handles slow consumers (backpressure)."
+      zh: "設計一個能處理慢速消費者（背壓）的串流伺服器。"
+    points:
+      en:
+        - "SSE/WebSocket streaming; tokens buffered per request in the frontend, not in the engine loop."
+        - "Bounded buffers; if a client can't keep up, coalesce tokens or abort and free KV."
+        - "Detect disconnects quickly and abort the request so blocks are released."
+        - "Keep the engine step loop independent from network I/O (separate processes/async)."
+      zh:
+        - "SSE/WebSocket 串流；每個請求的 token 緩衝放在前端，而不是 engine 迴圈裡。"
+        - "使用有上限的緩衝區；客戶端跟不上時，合併 token 或中止並釋放 KV。"
+        - "快速偵測斷線並中止請求，讓 block 被釋放。"
+        - "讓 engine 的步驟迴圈與網路 I/O 互不影響（分開的行程／非同步）。"
+    followups:
+      en: ["What's the cost of NOT aborting disconnected requests?"]
+      zh: ["如果不中止已斷線的請求，代價是什麼？"]
+    red_flags:
+      en: ["Blocks the GPU loop on socket writes."]
+      zh: ["讓 GPU 迴圈卡在 socket 寫入上。"]
+  - id: iv-21
+    level: mid
+    kind: coding
+    episode: E12
+    q:
+      en: "Coding: implement a paged KV block allocator with allocate(n), free(seq), and reference-counted sharing."
+      zh: "程式題：實作一個分頁 KV block 配置器，支援 allocate(n)、free(seq)，以及有參照計數的共享。"
+    points:
+      en:
+        - "Free list (deque) of block IDs; per-sequence block table; ref counts per block."
+        - "allocate raises or returns failure when the free list is empty (caller preempts)."
+        - "share(seq_a → seq_b) increments refs; free decrements, returns block to free list only at 0."
+        - "Invariants: no double free, free set == {refs == 0}; tests for each."
+        - "Optional: copy-on-write when appending to a shared partial block."
+      zh:
+        - "用 deque 當作 block ID 的空閒清單；每個序列一張 block table；每個 block 一個參照計數。"
+        - "空閒清單用完時，allocate 要拋出例外或回傳失敗（由呼叫者搶占）。"
+        - "share(seq_a → seq_b) 增加參照數；free 減少參照數，只有歸零時才放回空閒清單。"
+        - "不變量：不能重複釋放、空閒集合 == {參照數 == 0}；每一條都要有測試。"
+        - "加分：在共享但未滿的 block 後面追加時做 copy-on-write。"
+    followups:
+      en: ["Add LRU eviction of cached-but-unused blocks."]
+      zh: ["加入對「已快取但未使用」block 的 LRU 淘汰。"]
+    red_flags:
+      en: ["No invariants or tests."]
+      zh: ["沒有不變量，也沒有測試。"]
+  - id: iv-22
+    level: senior
+    kind: coding
+    episode: E14
+    q:
+      en: "Coding: implement a request scheduler with a per-step token budget, priorities, and preemption."
+      zh: "程式題：實作一個有每步 token 預算、優先權與搶占功能的請求排程器。"
+    points:
+      en:
+        - "Data: waiting priority queue, running list, per-request computed/total tokens."
+        - "Each step: serve running first (decode 1 token, or a prefill chunk), then admit waiting while budget and memory allow."
+        - "On allocation failure, preempt the lowest-priority running request (free its blocks, push back to waiting)."
+        - "Return a plan (req_id → n_tokens); never mutate tensors."
+        - "Tests: budget never exceeded, no starvation for equal priority, preempted requests resume correctly."
+      zh:
+        - "資料結構：等待中的優先佇列、執行中清單、每個請求的已計算/總 token 數。"
+        - "每一步：先服務執行中的請求（decode 1 個 token 或一段 prefill），再在預算與記憶體允許時讓等待中的請求進場。"
+        - "配置失敗時，搶占優先權最低的執行中請求（釋放其 block，放回等待佇列）。"
+        - "回傳一份計畫（req_id → token 數）；不要修改 tensor。"
+        - "測試：預算永不超過、同優先權不會餓死、被搶占的請求能正確恢復。"
+    followups:
+      en: ["How do you avoid thrashing (repeated preempt/resume)?"]
+      zh: ["怎麼避免抖動（反覆搶占/恢復）？"]
+    red_flags:
+      en: ["Schedules whole requests instead of tokens."]
+      zh: ["以整個請求為單位排程，而不是以 token 為單位。"]
+  - id: iv-23
+    level: junior
+    kind: coding
+    episode: E03
+    q:
+      en: "Coding: implement causal single-head attention in NumPy or PyTorch and test that future tokens don't affect past outputs."
+      zh: "程式題：用 NumPy 或 PyTorch 實作單頭因果 attention，並測試未來的 token 不會影響過去的輸出。"
+    points:
+      en:
+        - "Q = XWq, K = XWk, V = XWv; scores = QKᵀ/√d; mask upper triangle with -inf; softmax; @ V."
+        - "Numerically stable softmax (subtract the max)."
+        - "Test: change token t+1..n, outputs at ≤ t unchanged (allclose)."
+        - "Shapes stated explicitly."
+      zh:
+        - "Q = XWq、K = XWk、V = XWv；分數 = QKᵀ/√d；把上三角遮成 -inf；softmax；再乘 V。"
+        - "數值穩定的 softmax（先減去最大值）。"
+        - "測試：改變 t+1..n 的 token，≤ t 位置的輸出不變（allclose）。"
+        - "明確寫出各 tensor 的 shape。"
+    followups:
+      en: ["Extend to cached decode with an offset."]
+      zh: ["擴充成有 offset 的快取 decode。"]
+    red_flags:
+      en: ["Masks the wrong triangle."]
+      zh: ["遮錯了三角形。"]
+  - id: iv-24
+    level: mid
+    kind: debug
+    episode: E24
+    q:
+      en: "After upgrading the inference engine, p99 TTFT doubled but mean throughput is unchanged. How do you debug it?"
+      zh: "升級推論引擎之後，p99 TTFT 變成兩倍，但平均吞吐量不變。你會怎麼除錯？"
+    points:
+      en:
+        - "Reproduce with a pinned benchmark (same workload, rate, seeds, cold/warm cache)."
+        - "Split TTFT into queueing vs prefill: check scheduler metrics, queue depth, preemptions."
+        - "Diff config defaults between versions (token budget, chunked prefill, max_num_seqs, prefix caching, scheduling policy)."
+        - "Bisect versions/commits; profile one slow request."
+        - "Report with evidence and a minimal reproduction upstream."
+      zh:
+        - "用固定的 benchmark 重現（相同工作負載、速率、seed、冷/熱 cache）。"
+        - "把 TTFT 拆成排隊 vs prefill：檢查排程器指標、佇列深度、搶占次數。"
+        - "比對兩個版本的預設設定（token 預算、chunked prefill、max_num_seqs、prefix caching、排程策略）。"
+        - "對版本/commit 做二分搜尋；剖析一個慢的請求。"
+        - "帶著證據與最小重現案例回報上游。"
+    followups:
+      en: ["How do you prove it's not your load generator?"]
+      zh: ["你怎麼證明問題不是出在你的壓測工具？"]
+    red_flags:
+      en: ["Starts by changing random flags in production."]
+      zh: ["一開始就在生產環境隨便改參數。"]
+  - id: iv-25
+    level: mid
+    kind: debug
+    episode: E07
+    q:
+      en: "Your server OOMs at startup or under load with long prompts. What are the likely causes and fixes?"
+      zh: "你的伺服器在啟動時，或在長 prompt 的負載下 OOM。可能的原因與解法？"
+    points:
+      en:
+        - "Startup: gpu_memory_utilization too high for co-located processes; max_model_len too large for KV to fit even one sequence."
+        - "Load: activation memory for large prefill chunks; multimodal encoders; CUDA-graph memory."
+        - "Fixes: lower max_model_len or max_num_batched_tokens, tune gpu_memory_utilization, FP8 KV, more TP, quantized weights."
+        - "Read the startup log: KV cache size and max concurrency reported by the engine."
+      zh:
+        - "啟動時：同一張卡上還有其他行程，gpu_memory_utilization 設太高；max_model_len 太大，連一個序列的 KV 都放不下。"
+        - "負載下：大 prefill chunk 的激活值記憶體；多模態 encoder；CUDA graph 的記憶體。"
+        - "解法：降低 max_model_len 或 max_num_batched_tokens、調整 gpu_memory_utilization、FP8 KV、加大 TP、量化權重。"
+        - "讀啟動日誌：引擎會回報 KV cache 大小與最大並行數。"
+    followups:
+      en: ["What does gpu_memory_utilization actually control?"]
+      zh: ["gpu_memory_utilization 實際上控制的是什麼？"]
+    red_flags:
+      en: ["Only says 'buy bigger GPUs'."]
+      zh: ["只說「買更大的 GPU」。"]
+  - id: iv-26
+    level: mid
+    kind: debug
+    episode: E02
+    q:
+      en: "A fine-tuned model gives great answers in your notebook but rambles in production. What's your checklist?"
+      zh: "微調後的模型在 notebook 裡回答很好，上線後卻一直講廢話。你的檢查清單是？"
+    points:
+      en:
+        - "Chat template mismatch (training vs serving), missing or extra special tokens and BOS."
+        - "Stop tokens / EOS IDs and generation_config defaults (temperature, repetition penalty)."
+        - "Tokenizer version or revision differences; system prompt differences."
+        - "Compare the exact rendered prompt token IDs between notebook and server."
+      zh:
+        - "Chat template 不一致（訓練 vs 服務）、缺少或多了特殊 token 與 BOS。"
+        - "停止 token／EOS ID 與 generation_config 預設值（temperature、repetition penalty）。"
+        - "Tokenizer 版本或 revision 不同；system prompt 不同。"
+        - "比對 notebook 與伺服器實際渲染後的 prompt token ID。"
+    followups:
+      en: ["How would you add a regression test for this?"]
+      zh: ["你會怎麼為這個問題加一個回歸測試？"]
+    red_flags:
+      en: ["Retrains the model first."]
+      zh: ["第一步就重新訓練模型。"]
+  - id: iv-27
+    level: senior
+    kind: concept
+    episode: E22
+    q:
+      en: "What does an RL post-training system need from its inference engine?"
+      zh: "RL 後訓練系統需要推論引擎提供什麼？"
+    points:
+      en:
+        - "High-throughput sampling with many samples per prompt (prefix sharing helps)."
+        - "Fast weight updates from the trainer (NCCL/RDMA/IPC weight transfer), without restart."
+        - "Memory release/restore between rollout and training (sleep mode) when co-located."
+        - "Logprobs that closely match the trainer (numerics, batch invariance), plus handling long-tail rollouts."
+      zh:
+        - "高吞吐量抽樣，每個 prompt 很多個樣本（前綴共享有幫助）。"
+        - "從訓練端快速更新權重（NCCL/RDMA/IPC 權重傳輸），不需要重啟。"
+        - "共置時，在 rollout 與訓練之間釋放/恢復記憶體（sleep mode）。"
+        - "與訓練端高度一致的 logprobs（數值、batch invariance），並處理長尾 rollout。"
+    followups:
+      en: ["Co-located vs disaggregated trainer/rollout: trade-offs?"]
+      zh: ["訓練與 rollout 共置 vs 分離：各有什麼取捨？"]
+    red_flags:
+      en: ["Thinks RL needs no inference."]
+      zh: ["以為 RL 不需要推論。"]
+  - id: iv-28
+    level: mid
+    kind: concept
+    episode: E15
+    q:
+      en: "How does vLLM run the same model on NVIDIA, AMD and other hardware? Where would you add support for a new accelerator?"
+      zh: "vLLM 怎麼讓同一個模型在 NVIDIA、AMD 與其他硬體上執行？要支援新的加速器，你會從哪裡加？"
+    points:
+      en:
+        - "Platform abstraction (vllm/platforms) for device detection, defaults and capabilities."
+        - "Pluggable attention backends chosen by a selector; custom ops with per-platform implementations."
+        - "Out-of-tree platform plugins (e.g. Ascend, Tenstorrent, Apple Silicon) avoid forking."
+        - "Correctness parity vs performance parity: validate both separately per backend."
+      zh:
+        - "平台抽象層（vllm/platforms）負責裝置偵測、預設值與能力。"
+        - "由 selector 選擇的可抽換 attention backend；有各平台實作的 custom op。"
+        - "Out-of-tree 平台外掛（例如 Ascend、Tenstorrent、Apple Silicon）避免分叉。"
+        - "正確性一致 vs 效能一致：每個 backend 都要分開驗證。"
+    followups:
+      en: ["Why isn't 'replace cuda with hip' enough for ROCm?"]
+      zh: ["為什麼對 ROCm 來說，「把 cuda 換成 hip」是不夠的？"]
+    red_flags:
+      en: ["Assumes all hardware shares kernels."]
+      zh: ["以為所有硬體共用同一套 kernel。"]
+  - id: iv-29
+    level: junior
+    kind: behavioral
+    episode: E26
+    q:
+      en: "Tell me about a time you debugged something hard. What did you measure?"
+      zh: "說一個你除錯過的困難問題。你量測了什麼？"
+    points:
+      en:
+        - "STAR structure with a concrete technical situation."
+        - "A hypothesis → measurement → result loop, including a negative control."
+        - "Numbers and evidence; what you'd do differently."
+        - "Link to an artifact (PR, issue, write-up)."
+      zh:
+        - "STAR 結構，搭配具體的技術情境。"
+        - "假設 → 量測 → 結果的循環，包含對照組。"
+        - "有數字、有證據；以及你下次會怎麼做。"
+        - "附上成果連結（PR、issue、文章）。"
+    followups:
+      en: ["What was the root cause, in one sentence?"]
+      zh: ["用一句話說出根本原因。"]
+    red_flags:
+      en: ["No measurement, only intuition."]
+      zh: ["沒有量測，只有直覺。"]
+  - id: iv-30
+    level: junior
+    kind: behavioral
+    episode: E23
+    q:
+      en: "How would you get started contributing to a large open-source project like vLLM?"
+      zh: "你會怎麼開始參與 vLLM 這樣大型開源專案的貢獻？"
+    points:
+      en:
+        - "Use it first, read the contributing guide and the architecture docs."
+        - "Pick a scoped issue (good first issue, onboarding board, a bug you hit), check for duplicates, communicate on the issue."
+        - "Reproduce, test first, small PR, DCO sign-off, clear description, respond to review."
+        - "Help in other ways too: reviews, reproductions, docs, benchmarks."
+      zh:
+        - "先用它，讀貢獻指南與架構文件。"
+        - "挑一個範圍明確的 issue（good first issue、新手看板、你遇到的 bug），先查重複，在 issue 上溝通。"
+        - "重現、先寫測試、小型 PR、DCO 簽署、清楚的說明、回覆審查意見。"
+        - "也用其他方式幫忙：審查、重現問題、文件、benchmark。"
+    followups:
+      en: ["What's a PR you would NOT open?"]
+      zh: ["哪一種 PR 你「不會」開？"]
+    red_flags:
+      en: ["Plans to open many trivial PRs to pad a profile."]
+      zh: ["打算開很多瑣碎 PR 來灌個人檔案。"]
+  - id: iv-31
+    level: senior
+    kind: design
+    episode: E27
+    q:
+      en: "Design serving for a coding agent: 60k-token average context, 30 turns per session, 2k concurrent sessions. Where do you start?"
+      zh: "為一個 coding agent 設計服務：平均 context 6 萬 token、每個 session 30 回合、2 千個並行 session。你從哪裡開始？"
+    points:
+      en:
+        - "Characterize the trace: prefix reuse per turn, output length, tool-pause duration, branching."
+        - "KV math: 60k × KV/token × active sessions vs HBM; decide what lives in HBM vs host/SSD tiers."
+        - "Session-affinity or cache-aware routing so turns land where their prefix is cached."
+        - "Prefix caching on, tiered KV offload for paused sessions; chunked prefill to protect decode."
+        - "SLOs: TTFT on returning turns, per-user tokens/s floor, cache hit rate, re-prefill tokens."
+      zh:
+        - "先描述 trace：每回合的前綴重用、輸出長度、工具暫停時間、分岔情況。"
+        - "KV 計算：6 萬 × 每 token KV × 活躍 session 數 vs HBM；決定哪些放 HBM、哪些放主機記憶體／SSD 層。"
+        - "Session 親和性或感知快取的路由，讓每回合落在快取了前綴的地方。"
+        - "開 prefix caching，暫停中的 session 用分層 KV offload；用 chunked prefill 保護 decode。"
+        - "SLO：回訪回合的 TTFT、每位使用者 tokens/s 下限、快取命中率、重新 prefill 的 token 數。"
+    followups:
+      en: ["A replica dies. What happens to the sessions cached on it?", "Would you disaggregate prefill and decode here? What would you measure first?"]
+      zh: ["一個副本掛了，快取在它上面的 session 會怎樣？", "這裡你會做 prefill/decode 分離嗎？你會先量什麼？"]
+    red_flags:
+      en: ["Sizes only for tokens/s and ignores cache reuse.", "Round-robin routing with no affinity."]
+      zh: ["只用 tokens/s 規劃容量，忽略快取重用。", "沒有任何親和性的 round-robin 路由。"]
+  - id: iv-32
+    level: mid
+    kind: debug
+    episode: E28
+    q:
+      en: "Scale-up takes 6 minutes per new vLLM replica and users time out during traffic spikes. How do you debug and fix it?"
+      zh: "每新增一個 vLLM 副本要 6 分鐘，流量高峰時使用者一直逾時。你怎麼除錯並修正？"
+    points:
+      en:
+        - "Read the startup log and time each stage: download, load, profiling + compile, KV allocation, CUDA-graph capture."
+        - "Weights: pre-stage on local NVMe or stream them; avoid re-downloading per pod."
+        - "Compile: persist the torch.compile cache; trim CUDA-graph capture sizes if capture dominates."
+        - "Residency: weight-cache daemon / ipc_cache, sleep-mode warm pools, or snapshots, where supported."
+        - "Autoscaler: scale on queue depth earlier and keep a warm buffer replica."
+      zh:
+        - "讀啟動日誌，把每個階段計時：下載、載入、量測 + 編譯、配置 KV、CUDA graph 擷取。"
+        - "權重：預先放到本機 NVMe 或用串流；避免每個 pod 都重新下載。"
+        - "編譯：保留 torch.compile 快取；如果擷取最花時間，就減少 CUDA graph 的 batch size 數量。"
+        - "常駐：在支援的情況下使用權重快取常駐程式／ipc_cache、sleep mode 熱備池或快照。"
+        - "自動擴展器：根據佇列深度更早擴展，並保留一個預熱好的緩衝副本。"
+    followups:
+      en: ["Why might `--enforce-eager` start faster but serve slower?"]
+      zh: ["為什麼 `--enforce-eager` 可能啟動比較快，但服務比較慢？"]
+    red_flags:
+      en: ["Jumps to 'buy more GPUs' without timing stages.", "Doesn't know a startup log exists."]
+      zh: ["沒有逐階段計時就直接說「買更多 GPU」。", "不知道有啟動日誌可以看。"]

@@ -1,0 +1,451 @@
+# vLLM code map. Every path and line was checked against the pinned commit below.
+# When you re-pin, re-check every path, symbol and line at the new commit (git grep), then update hunts.yaml answers.
+pin:
+  repo: vllm-project/vllm
+  commit: 74f4404f58c0fb16821b34c16343486eeaf164a5
+  date: "2026-10-12"
+  note:
+    en: "vLLM main on 12 Oct 2026 (after v0.31.0). Line numbers drift on main, so the permalinks stay on this commit."
+    zh: "2026 年 10 月 12 日的 vLLM main（v0.31.0 之後）。main 上的行號會飄移，所以永久連結固定在這個 commit。"
+
+areas:
+  - id: frontend
+    emoji: "🌐"
+    title: {en: "Frontend & API", zh: "前端與 API"}
+  - id: engine
+    emoji: "🫀"
+    title: {en: "Engine core & scheduling", zh: "Engine core 與排程"}
+  - id: memory
+    emoji: "🧠"
+    title: {en: "KV cache & memory", zh: "KV cache 與記憶體"}
+  - id: worker
+    emoji: "⚙️"
+    title: {en: "Workers, runners & kernels", zh: "Worker、runner 與 kernel"}
+  - id: models
+    emoji: "🦙"
+    title: {en: "Models & layers", zh: "模型與網路層"}
+  - id: scale
+    emoji: "🌍"
+    title: {en: "Scale-out, speed tricks & RL", zh: "擴展、加速技巧與 RL"}
+
+entries:
+  - id: cli_serve
+    area: frontend
+    title: {en: "`vllm serve` entry point", zh: "`vllm serve` 進入點"}
+    path: vllm/entrypoints/cli/serve.py
+    line: 48
+    symbol: ServeSubcommand
+    owns:
+      en: "Parses CLI args and launches the API server, plus engine processes for data-parallel or headless modes."
+      zh: "解析 CLI 參數並啟動 API server，在 data-parallel 或 headless 模式下也啟動 engine 行程。"
+    try:
+      en: "Find where the `serve` subcommand decides between a single API server and multiple API servers."
+      zh: "找出 `serve` 子指令在哪裡決定要啟動一個還是多個 API server。"
+  - id: api_router
+    area: frontend
+    title: {en: "Chat completions HTTP route", zh: "Chat completions HTTP 路由"}
+    path: vllm/entrypoints/openai/chat_completion/api_router.py
+    line: 42
+    symbol: create_chat_completion
+    owns:
+      en: "FastAPI route for `/v1/chat/completions`; hands the parsed request to the serving class."
+      zh: "`/v1/chat/completions` 的 FastAPI 路由；把解析後的請求交給 serving 類別。"
+    try:
+      en: "List the other OpenAI-compatible routes under `vllm/entrypoints/openai/`. Which one serves the Responses API?"
+      zh: "列出 `vllm/entrypoints/openai/` 底下其他相容 OpenAI 的路由。哪一個負責 Responses API？"
+  - id: chat_serving
+    area: frontend
+    title: {en: "OpenAIServingChat", zh: "OpenAIServingChat"}
+    path: vllm/entrypoints/openai/chat_completion/serving.py
+    line: 281
+    symbol: OpenAIServingChat.create_chat_completion
+    owns:
+      en: "Validates the request, renders the chat template, builds sampling params, calls the engine and formats streaming/non-streaming responses, tool calls and reasoning output."
+      zh: "驗證請求、渲染 chat template、建立 sampling params、呼叫引擎，並格式化串流/非串流回應、工具呼叫與推理輸出。"
+    try:
+      en: "Trace how `stream=True` changes the return type."
+      zh: "追蹤 `stream=True` 如何改變回傳型別。"
+  - id: renderer
+    area: frontend
+    title: {en: "Renderers (chat template → tokens)", zh: "Renderer（chat template → token）"}
+    path: vllm/renderers/base.py
+    line: 105
+    symbol: BaseRenderer
+    owns:
+      en: "Turns messages and multimodal inputs into the exact token stream the model sees. Model-specific renderers live next to it (e.g. kimi_k3.py, deepseek_v4.py)."
+      zh: "把訊息與多模態輸入轉成模型實際看到的 token 串。模型專屬的 renderer 就放在旁邊（例如 kimi_k3.py、deepseek_v4.py）。"
+    try:
+      en: "Open one model-specific renderer and find why it can't just use the generic HF template."
+      zh: "打開一個模型專屬的 renderer，找出它為什麼不能直接用通用的 HF template。"
+  - id: async_llm
+    area: engine
+    title: {en: "AsyncLLM.generate", zh: "AsyncLLM.generate"}
+    path: vllm/v1/engine/async_llm.py
+    line: 691
+    symbol: AsyncLLM.generate
+    owns:
+      en: "Async front of the engine: turns a prompt into an EngineCoreRequest (via InputProcessor), sends it to the core, and yields outputs as they stream back."
+      zh: "引擎的非同步前端：透過 InputProcessor 把 prompt 轉成 EngineCoreRequest，送到 core，並在輸出串流回來時逐一產出。"
+    try:
+      en: "Find where a client disconnect turns into an abort."
+      zh: "找出客戶端斷線在哪裡變成 abort。"
+  - id: input_processor
+    area: engine
+    title: {en: "InputProcessor", zh: "InputProcessor"}
+    path: vllm/v1/engine/input_processor.py
+    line: 41
+    symbol: InputProcessor
+    owns:
+      en: "Validates sampling params and inputs and builds the EngineCoreRequest that crosses the process boundary."
+      zh: "驗證 sampling params 與輸入，並建立跨越行程邊界的 EngineCoreRequest。"
+    try:
+      en: "Which fields of EngineCoreRequest must be serializable, and why?"
+      zh: "EngineCoreRequest 的哪些欄位必須可以序列化？為什麼？"
+  - id: core_client
+    area: engine
+    title: {en: "Engine core client (ZMQ)", zh: "Engine core client（ZMQ）"}
+    path: vllm/v1/engine/core_client.py
+    line: 1106
+    symbol: AsyncMPClient
+    owns:
+      en: "Talks to the EngineCore process over ZMQ sockets, so tokenization and HTTP never block the GPU loop."
+      zh: "透過 ZMQ socket 與 EngineCore 行程溝通，讓 tokenize 與 HTTP 永遠不會擋住 GPU 迴圈。"
+    try:
+      en: "Compare InprocClient vs AsyncMPClient. When is each used?"
+      zh: "比較 InprocClient 與 AsyncMPClient。各在什麼時候使用？"
+  - id: engine_core
+    area: engine
+    title: {en: "EngineCore.step", zh: "EngineCore.step"}
+    path: vllm/v1/engine/core.py
+    line: 652
+    symbol: EngineCore.step
+    owns:
+      en: "The heartbeat: schedule → execute on workers → update scheduler from outputs → return outputs."
+      zh: "心跳：排程 → 在 worker 上執行 → 用輸出更新排程器 → 回傳輸出。"
+    try:
+      en: "Find the batch-queue variant used when async scheduling overlaps CPU and GPU work."
+      zh: "找出非同步排程讓 CPU 與 GPU 工作重疊時所用的 batch queue 版本。"
+  - id: scheduler
+    area: engine
+    title: {en: "Scheduler.schedule", zh: "Scheduler.schedule"}
+    path: vllm/v1/core/sched/scheduler.py
+    line: 591
+    symbol: Scheduler.schedule
+    owns:
+      en: "Allocates a per-step token budget (`token_budget`, line 611): running requests first, then waiting ones; handles preemption, chunked prefill, spec-decode slots and connectors."
+      zh: "分配每一步的 token 預算（`token_budget`，第 611 行）：先給執行中的請求，再給等待中的；處理搶占、chunked prefill、推測解碼的位置與 connector。"
+    try:
+      en: "Find `_preempt_request` (line 1582) and `update_from_output` (line 2036). What state does each change?"
+      zh: "找到 `_preempt_request`（第 1582 行）與 `update_from_output`（第 2036 行）。它們各自改變了什麼狀態？"
+  - id: request
+    area: engine
+    title: {en: "Request (V1)", zh: "Request（V1）"}
+    path: vllm/v1/request.py
+    line: 60
+    symbol: Request
+    owns:
+      en: "Per-request state the scheduler tracks: prompt and output token IDs, num_computed_tokens, status, block hashes."
+      zh: "排程器追蹤的每個請求狀態：prompt 與輸出 token ID、num_computed_tokens、狀態、block hash。"
+    try:
+      en: "Which field tells you how much of the prompt is already in the KV cache?"
+      zh: "哪個欄位能告訴你 prompt 已經有多少在 KV cache 裡？"
+  - id: kv_cache_manager
+    area: memory
+    title: {en: "KVCacheManager", zh: "KVCacheManager"}
+    path: vllm/v1/core/kv_cache_manager.py
+    line: 371
+    symbol: KVCacheManager.allocate_slots
+    owns:
+      en: "Finds prefix-cache hits (`get_computed_blocks`, line 264) and allocates blocks for new tokens (`allocate_slots`). Returns None when memory is short, which triggers preemption."
+      zh: "找出 prefix cache 命中（`get_computed_blocks`，第 264 行），並為新 token 配置 block（`allocate_slots`）。記憶體不足時回傳 None，觸發搶占。"
+    try:
+      en: "Read `free()` (line 620). In what order are a request's blocks returned, and why does the order matter for eviction?"
+      zh: "讀 `free()`（第 620 行）。一個請求的 block 以什麼順序歸還？為什麼這個順序對淘汰很重要？"
+  - id: block_pool
+    area: memory
+    title: {en: "BlockPool", zh: "BlockPool"}
+    path: vllm/v1/core/block_pool.py
+    line: 136
+    symbol: BlockPool
+    owns:
+      en: "All physical KV blocks, the free queue, ref counts, and the hash → block map for prefix caching (`cache_full_blocks`, `get_cached_block`)."
+      zh: "所有實體 KV block、空閒佇列、參照計數，以及 prefix caching 用的 hash → block 對照表（`cache_full_blocks`、`get_cached_block`）。"
+    try:
+      en: "Find `_maybe_evict_cached_block` (line 729). When does a cached block actually lose its hash?"
+      zh: "找到 `_maybe_evict_cached_block`（第 729 行）。快取的 block 什麼時候真正失去它的 hash？"
+  - id: free_queue
+    area: memory
+    title: {en: "FreeKVCacheBlockQueue", zh: "FreeKVCacheBlockQueue"}
+    path: vllm/v1/core/kv_cache_utils.py
+    line: 246
+    symbol: FreeKVCacheBlockQueue
+    owns:
+      en: "A hand-rolled doubly linked list of free blocks in LRU eviction order, with O(1) removal from the middle when a cached block gets hit."
+      zh: "手寫的空閒 block 雙向鏈結串列，依 LRU 淘汰順序排列；快取的 block 被命中時可以 O(1) 從中間移除。"
+    try:
+      en: "Why not just use `collections.deque`? The docstring tells you."
+      zh: "為什麼不直接用 `collections.deque`？docstring 有答案。"
+  - id: prefix_hash
+    area: memory
+    title: {en: "Block hashing for prefix caching", zh: "Prefix caching 的 block hash"}
+    path: vllm/v1/core/kv_cache_utils.py
+    line: 695
+    symbol: hash_block_tokens
+    owns:
+      en: "Computes a block's identity from the parent hash, the block's token IDs and extra keys (LoRA, multimodal, cache salt)."
+      zh: "用上一個 block 的 hash、這個 block 的 token ID 與額外的 key（LoRA、多模態、cache salt）計算 block 的身分。"
+    try:
+      en: "Find `get_request_block_hasher` (line 941). What goes into `extra_keys` for an image prompt?"
+      zh: "找到 `get_request_block_hasher`（第 941 行）。圖片 prompt 的 `extra_keys` 裡放了什麼？"
+  - id: kv_offload
+    area: memory
+    title: {en: "KV offloading", zh: "KV offload"}
+    path: vllm/v1/kv_offload/base.py
+    line: 235
+    symbol: OffloadingManager
+    owns:
+      en: "Abstractions for moving KV blocks to other tiers (CPU, files, remote). Wired into the engine through the OffloadingConnector."
+      zh: "把 KV block 搬到其他層（CPU、檔案、遠端）的抽象介面。透過 OffloadingConnector 接進引擎。"
+    try:
+      en: "Open `vllm/v1/kv_offload/tiering/`. How many tiers can be chained?"
+      zh: "打開 `vllm/v1/kv_offload/tiering/`。最多可以串接幾層？"
+  - id: model_runner
+    area: worker
+    title: {en: "GPUModelRunner.execute_model", zh: "GPUModelRunner.execute_model"}
+    path: vllm/v1/worker/gpu_model_runner.py
+    line: 4095
+    symbol: GPUModelRunner.execute_model
+    owns:
+      en: "Turns the SchedulerOutput into device tensors (input IDs, positions, block tables, slot mappings), runs the model and prepares sampling."
+      zh: "把 SchedulerOutput 轉成裝置上的 tensor（input ID、positions、block table、slot mapping），執行模型並準備抽樣。"
+    try:
+      en: "Find where the persistent input batch is updated incrementally instead of rebuilt each step."
+      zh: "找出 persistent input batch 在哪裡被增量更新，而不是每一步重建。"
+  - id: model_runner_v2
+    area: worker
+    title: {en: "Model Runner V2 (experimental)", zh: "Model Runner V2（實驗中）"}
+    path: vllm/v1/worker/gpu/model_runner.py
+    line: 193
+    symbol: GPUModelRunner
+    owns:
+      en: "A rewrite of the runner, under active development, with a cleaner split of input prep, sampling (`sample_tokens`, line 2088) and spec decode."
+      zh: "正在積極開發中的 runner 重寫版本，把輸入準備、抽樣（`sample_tokens`，第 2088 行）與推測解碼切分得更清楚。"
+    try:
+      en: "Read `vllm/v1/worker/gpu/README.md`. Who should you ping before changing this directory?"
+      zh: "讀 `vllm/v1/worker/gpu/README.md`。修改這個資料夾之前應該先找誰？"
+  - id: attention_selector
+    area: worker
+    title: {en: "Attention backend selector", zh: "Attention backend 選擇器"}
+    path: vllm/v1/attention/selector.py
+    line: 105
+    symbol: get_attn_backend
+    owns:
+      en: "Chooses the attention backend (FlashAttention, FlashInfer, Triton, ROCm AITER, MLA, CPU…) based on platform, dtype, model and config."
+      zh: "依平台、dtype、模型與設定選擇 attention backend（FlashAttention、FlashInfer、Triton、ROCm AITER、MLA、CPU…）。"
+    try:
+      en: "Count the files in `vllm/v1/attention/backends/`. Which ones are ROCm-specific?"
+      zh: "數一數 `vllm/v1/attention/backends/` 有幾個檔案。哪些是 ROCm 專用的？"
+  - id: flash_attn
+    area: worker
+    title: {en: "FlashAttention backend", zh: "FlashAttention backend"}
+    path: vllm/v1/attention/backends/flash_attn.py
+    line: 1233
+    symbol: FlashAttentionImpl.forward
+    owns:
+      en: "Writes new K/V into the paged cache via slot mappings and runs varlen attention over block tables."
+      zh: "透過 slot mapping 把新的 K/V 寫進分頁 cache，再對 block table 執行變長 attention。"
+    try:
+      en: "Find where `slot_mapping` is used to write K/V into the cache."
+      zh: "找出 `slot_mapping` 在哪裡被用來把 K/V 寫進 cache。"
+  - id: cudagraph
+    area: worker
+    title: {en: "CUDA graphs & compilation", zh: "CUDA graph 與編譯"}
+    path: vllm/compilation/cuda_graph.py
+    line: 145
+    symbol: CUDAGraphWrapper
+    owns:
+      en: "Captures and replays CUDA graphs for common batch shapes. The dispatcher (`vllm/v1/cudagraph_dispatcher.py`) picks the graph mode per step; `vllm/compilation/` holds torch.compile passes."
+      zh: "針對常見 batch 形狀擷取並重播 CUDA graph。Dispatcher（`vllm/v1/cudagraph_dispatcher.py`）決定每一步的 graph 模式；`vllm/compilation/` 放的是 torch.compile 的最佳化 pass。"
+    try:
+      en: "List the passes in `vllm/compilation/passes/`. Pick one fusion and explain what two ops it merges."
+      zh: "列出 `vllm/compilation/passes/` 裡的 pass。挑一個融合，說明它合併了哪兩個運算。"
+  - id: platforms
+    area: worker
+    title: {en: "Platforms", zh: "平台層"}
+    path: vllm/platforms/interface.py
+    line: 137
+    symbol: Platform
+    owns:
+      en: "Hardware abstraction: cuda.py, rocm.py, xpu.py, tpu.py, cpu.py implement capabilities and defaults; out-of-tree plugins register more."
+      zh: "硬體抽象：cuda.py、rocm.py、xpu.py、tpu.py、cpu.py 實作各自的能力與預設值；out-of-tree 外掛可以註冊更多平台。"
+    try:
+      en: "Compare one method's implementation in cuda.py vs rocm.py."
+      zh: "比較 cuda.py 與 rocm.py 中同一個方法的實作。"
+  - id: sampler
+    area: worker
+    title: {en: "Sampler", zh: "Sampler（抽樣器）"}
+    path: vllm/v1/sample/sampler.py
+    line: 73
+    symbol: Sampler.forward
+    owns:
+      en: "Applies penalties, temperature, top-k/top-p/min-p, logits processors, and returns token IDs plus optional logprobs."
+      zh: "套用懲罰、temperature、top-k/top-p/min-p、logits processor，回傳 token ID 以及可選的 logprobs。"
+    try:
+      en: "Where is greedy (temperature 0) handled separately from random sampling?"
+      zh: "Greedy（temperature 0）在哪裡和隨機抽樣分開處理？"
+  - id: output_processor
+    area: frontend
+    title: {en: "OutputProcessor & detokenizer", zh: "OutputProcessor 與 detokenizer"}
+    path: vllm/v1/engine/output_processor.py
+    line: 677
+    symbol: OutputProcessor.process_outputs
+    owns:
+      en: "Frontend side of the return path: incremental detokenization (`vllm/v1/engine/detokenizer.py`), stop strings, logprobs and per-request output queues."
+      zh: "回程的前端部分：增量 detokenize（`vllm/v1/engine/detokenizer.py`）、停止字串、logprobs 與每個請求的輸出佇列。"
+    try:
+      en: "Why must detokenization be incremental for multi-byte UTF-8 characters like 中文?"
+      zh: "為什麼面對像中文這樣的多位元組 UTF-8 字元，detokenize 必須是增量的？"
+  - id: model_registry
+    area: models
+    title: {en: "Model registry", zh: "模型註冊表"}
+    path: vllm/model_executor/models/registry.py
+    line: 148
+    symbol: _TEXT_GENERATION_MODELS
+    owns:
+      en: "Maps Hugging Face `architectures` names to (module, class) in `vllm/model_executor/models/`."
+      zh: "把 Hugging Face 的 `architectures` 名稱對應到 `vllm/model_executor/models/` 裡的（模組, 類別）。"
+    try:
+      en: "How many architectures map to the llama module? Why do so many models reuse it?"
+      zh: "有幾個架構對應到 llama 模組？為什麼這麼多模型都重複使用它？"
+  - id: llama_model
+    area: models
+    title: {en: "Llama implementation", zh: "Llama 實作"}
+    path: vllm/model_executor/models/llama.py
+    line: 464
+    symbol: LlamaForCausalLM
+    owns:
+      en: "The reference decoder: TP-parallel linears, RoPE, RMSNorm, the paged Attention layer and `load_weights`. Most new models start as a copy of this file."
+      zh: "參考用的 decoder：TP 平行線性層、RoPE、RMSNorm、分頁 Attention 層與 `load_weights`。大多數新模型都是從複製這個檔案開始的。"
+    try:
+      en: "Find `stacked_params_mapping` in `load_weights`. How are q/k/v checkpoint tensors fused?"
+      zh: "在 `load_weights` 裡找 `stacked_params_mapping`。checkpoint 裡的 q/k/v tensor 是怎麼融合的？"
+  - id: attention_layers
+    area: models
+    title: {en: "Attention & parallel layers", zh: "Attention 與平行層"}
+    path: vllm/model_executor/layers/attention/attention.py
+    line: 229
+    symbol: Attention
+    owns:
+      en: "The model-facing Attention layer that hides the paged KV cache and backend. Siblings: `layers/linear.py` (QKVParallelLinear line 998, RowParallelLinear line 1626), `layers/layernorm.py`, `layers/rotary_embedding/`."
+      zh: "模型端使用的 Attention 層，把分頁 KV cache 與 backend 包起來。相關檔案：`layers/linear.py`（QKVParallelLinear 第 998 行、RowParallelLinear 第 1626 行）、`layers/layernorm.py`、`layers/rotary_embedding/`。"
+    try:
+      en: "Why does QKVParallelLinear need to know the number of KV heads separately?"
+      zh: "為什麼 QKVParallelLinear 需要另外知道 KV heads 的數量？"
+  - id: quantization
+    area: models
+    title: {en: "Quantization methods", zh: "量化方法"}
+    path: vllm/model_executor/layers/quantization/base_config.py
+    line: 106
+    symbol: QuantizationConfig
+    owns:
+      en: "Base class for quantization schemes; implementations live in this folder (fp8.py, mxfp4.py, compressed_tensors/, modelopt.py, quark/, awq/gptq…)."
+      zh: "量化方案的基底類別；實作都在這個資料夾（fp8.py、mxfp4.py、compressed_tensors/、modelopt.py、quark/、awq/gptq…）。"
+    try:
+      en: "Find how a quantization config decides which method each linear layer gets."
+      zh: "找出量化設定如何決定每個線性層使用哪種方法。"
+  - id: fused_moe
+    area: models
+    title: {en: "Fused MoE", zh: "Fused MoE"}
+    path: vllm/model_executor/layers/fused_moe/layer.py
+    line: 88
+    symbol: FusedMoEFactory
+    owns:
+      en: "MoE layers: routing, expert kernels, all-to-all prepare/finalize for expert parallelism (`prepare_finalize/`, `modular_kernel.py`)."
+      zh: "MoE 層：路由、expert kernel、expert parallelism 的 all-to-all prepare/finalize（`prepare_finalize/`、`modular_kernel.py`）。"
+    try:
+      en: "Find where token→expert routing (top-k) happens before dispatch."
+      zh: "找出 token→expert 路由（top-k）在 dispatch 之前的哪裡發生。"
+  - id: parallel_state
+    area: scale
+    title: {en: "Parallel groups (TP/PP/DP/EP)", zh: "平行群組（TP/PP/DP/EP）"}
+    path: vllm/distributed/parallel_state.py
+    line: 2056
+    symbol: initialize_model_parallel
+    owns:
+      en: "Creates the process groups for tensor, pipeline, data and expert parallelism; `get_tp_group()` (line 1588) is how layers find their peers."
+      zh: "建立 tensor、pipeline、data 與 expert parallelism 的行程群組；各層透過 `get_tp_group()`（第 1588 行）找到彼此。"
+    try:
+      en: "With TP=4, PP=2, how many ranks are there and which ranks share a TP group?"
+      zh: "TP=4、PP=2 時共有幾個 rank？哪些 rank 在同一個 TP 群組？"
+  - id: kv_connector
+    area: scale
+    title: {en: "KV connectors (disaggregation)", zh: "KV connector（分離部署）"}
+    path: vllm/distributed/kv_transfer/kv_connector/v1/base.py
+    line: 180
+    symbol: KVConnectorBase_V1
+    owns:
+      en: "Plugin interface for moving KV between instances or tiers; implementations include NIXL, Mooncake, LMCache, offloading, FlexKV, MORI-IO and more."
+      zh: "在實例或儲存層之間搬移 KV 的外掛介面；實作包含 NIXL、Mooncake、LMCache、offloading、FlexKV、MORI-IO 等。"
+    try:
+      en: "Read `example_connector.py` in the same folder. Which methods run in the scheduler and which in the worker?"
+      zh: "讀同一個資料夾的 `example_connector.py`。哪些方法在排程器執行、哪些在 worker 執行？"
+  - id: spec_decode
+    area: scale
+    title: {en: "Speculative decoding", zh: "推測解碼"}
+    path: vllm/v1/spec_decode/eagle.py
+    line: 10
+    symbol: EagleProposer
+    owns:
+      en: "Proposers live in `vllm/v1/spec_decode/`: eagle.py, ngram_proposer.py, suffix_decoding.py, draft_model.py, medusa.py, dflash.py…"
+      zh: "各種提議者放在 `vllm/v1/spec_decode/`：eagle.py、ngram_proposer.py、suffix_decoding.py、draft_model.py、medusa.py、dflash.py…"
+    try:
+      en: "Where are rejected draft tokens' KV slots handled? (Hint: the scheduler reserves `draft_slots`.)"
+      zh: "被拒絕的草稿 token 佔用的 KV 位置在哪裡處理？（提示：排程器會預留 `draft_slots`。）"
+  - id: weight_transfer
+    area: scale
+    title: {en: "Weight transfer (RL)", zh: "權重傳輸（RL）"}
+    path: vllm/distributed/weight_transfer/nccl_engine.py
+    line: 112
+    symbol: NCCLWeightTransferEngine
+    owns:
+      en: "Moves fresh trainer weights into running engines: NCCL, IPC, sharded Ray Direct Transport, M2N and more (`vllm/distributed/weight_transfer/`)."
+      zh: "把訓練端的新權重送進執行中的引擎：NCCL、IPC、分片的 Ray Direct Transport、M2N 等（`vllm/distributed/weight_transfer/`）。"
+    try:
+      en: "List the engine files in this folder and group them by transport."
+      zh: "列出這個資料夾裡的 engine 檔案，依傳輸方式分類。"
+  - id: rl_entrypoints
+    area: scale
+    title: {en: "RL control endpoints", zh: "RL 控制端點"}
+    path: vllm/entrypoints/rl/online/api_router.py
+    line: 31
+    symbol: pause / update_weights
+    owns:
+      en: "HTTP endpoints RL frameworks call: /pause, /resume, /init_weight_transfer_engine, /update_weights…"
+      zh: "RL 框架會呼叫的 HTTP 端點：/pause、/resume、/init_weight_transfer_engine、/update_weights…"
+    try:
+      en: "In what order would a trainer call these endpoints for one weight update?"
+      zh: "一次權重更新時，訓練端會以什麼順序呼叫這些端點？"
+  - id: bench
+    area: scale
+    title: {en: "`vllm bench serve`", zh: "`vllm bench serve`"}
+    path: vllm/benchmarks/serve.py
+    line: 1590
+    symbol: add_cli_args
+    owns:
+      en: "The online serving benchmark: datasets, request rate, concurrency, percentiles (`--percentile-metrics`, `--metric-percentiles`) and goodput."
+      zh: "線上服務 benchmark：資料集、請求速率、並行數、百分位數（`--percentile-metrics`、`--metric-percentiles`）與 goodput。"
+    try:
+      en: "Find the default for `--metric-percentiles`. Change it to report p50, p90 and p99."
+      zh: "找出 `--metric-percentiles` 的預設值。改成回報 p50、p90 與 p99。"
+  - id: contributing
+    area: scale
+    title: {en: "Contributing guide & AI policy", zh: "貢獻指南與 AI 政策"}
+    path: docs/contributing/README.md
+    line: 1
+    symbol: "DCO, PR title tags, AI-assisted contributions"
+    owns:
+      en: "Dev setup, linting, tests, DCO sign-off, PR title tags, review expectations and the AI-assisted contribution rules. Read `AGENTS.md` at the repo root too."
+      zh: "開發環境、lint、測試、DCO 簽署、PR 標題標籤、審查預期，以及 AI 輔助貢獻規則。也要讀 repo 根目錄的 `AGENTS.md`。"
+    try:
+      en: "Which PR title tags would you use for a fix to KV offload block accounting?"
+      zh: "如果你修的是 KV offload 的 block 計數問題，PR 標題要用哪些標籤？"

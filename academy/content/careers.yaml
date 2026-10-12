@@ -1,0 +1,80 @@
+# Career paths for /career. "proof" = portfolio projects that get interviews.
+careers:
+  - id: inference
+    emoji: "⚡"
+    title: {en: "Inference / ML Systems Engineer", zh: "推論／ML 系統工程師"}
+    pitch:
+      en: "Make models fast and cheap in production. The core role vLLM skills map to."
+      zh: "讓模型在生產環境又快又便宜。vLLM 技能最直接對應的職位。"
+    skills:
+      en: ["KV-cache and memory math", "Batching and scheduling", "Prefix caching and routing", "Quantization and speculative decoding", "Parallelism (TP/PP/DP/EP)", "Benchmarking with percentiles"]
+      zh: ["KV cache 與記憶體計算", "批次與排程", "Prefix caching 與路由", "量化與推測解碼", "平行化（TP/PP/DP/EP）", "使用百分位數做 benchmark"]
+    episodes: [E05, E07, E09, E10, E11, E17, E18, E19, E24, E25]
+    proof:
+      en: ["A Q7-style benchmark report comparing two configs, with raw data", "A blog post explaining one scheduler mechanism with your own diagrams", "An upstream PR touching scheduling, KV or performance"]
+      zh: ["一份 Q7 風格、比較兩種設定並附原始資料的 benchmark 報告", "一篇用自己的圖解釋某個排程機制的文章", "一個涉及排程、KV 或效能的上游 PR"]
+  - id: kernel
+    emoji: "🥷"
+    title: {en: "GPU Kernel / Performance Engineer", zh: "GPU Kernel／效能工程師"}
+    pitch:
+      en: "Write the attention, GEMM and MoE kernels everyone else depends on. Scarce skills, high leverage."
+      zh: "撰寫大家都依賴的 attention、GEMM 與 MoE kernel。稀缺技能、影響力大。"
+    skills:
+      en: ["CUDA / HIP / Triton", "Roofline analysis and profilers (Nsight, rocprof)", "FlashAttention-style tiling", "Low-precision formats (FP8/FP4)", "torch custom ops and torch.compile"]
+      zh: ["CUDA / HIP / Triton", "Roofline 分析與剖析工具（Nsight、rocprof）", "FlashAttention 式的切塊", "低精度格式（FP8/FP4）", "torch custom op 與 torch.compile"]
+    episodes: [E05, E15, E18, E19]
+    proof:
+      en: ["A Triton kernel with a correctness test and a roofline plot", "A profiling write-up that finds one real bottleneck in vLLM", "A kernel PR to vLLM or a kernel library"]
+      zh: ["一個附正確性測試與 roofline 圖的 Triton kernel", "一篇在 vLLM 中找到真實瓶頸的剖析文章", "一個送到 vLLM 或 kernel 函式庫的 kernel PR"]
+  - id: hardware
+    emoji: "🔌"
+    title: {en: "Hardware Enablement Engineer", zh: "硬體支援工程師"}
+    pitch:
+      en: "Bring new accelerators and servers up on vLLM and prove they're correct and fast. Taiwan builds a huge share of the world's AI servers, so this role lives here."
+      zh: "讓新的加速器與伺服器在 vLLM 上跑起來，並證明它們正確又快速。全世界很大一部分的 AI 伺服器是台灣製造的，這個職位就在這裡。"
+    skills:
+      en: ["Platform plugins and attention backends", "Correctness vs performance parity testing", "Multi-GPU interconnects (NVLink, xGMI, RDMA)", "Benchmark methodology and reporting", "Linux, drivers and containers"]
+      zh: ["平台外掛與 attention backend", "正確性一致 vs 效能一致的測試", "多 GPU 互連（NVLink、xGMI、RDMA）", "Benchmark 方法論與報告", "Linux、驅動程式與容器"]
+    episodes: [E05, E15, E19, E20, E24]
+    proof:
+      en: ["A hardware matrix (templates/HARDWARE_MATRIX.md) for two GPUs with raw results", "A ROCm or CPU-backend bug reproduction filed upstream", "A talk comparing backends at a meetup"]
+      zh: ["一份涵蓋兩種 GPU 並附原始結果的硬體矩陣（templates/HARDWARE_MATRIX.md）", "一個回報上游的 ROCm 或 CPU backend bug 重現", "一場在 meetup 比較各種 backend 的分享"]
+  - id: platform
+    emoji: "☁️"
+    title: {en: "ML Platform / Serving Infra Engineer", zh: "ML 平台／服務基礎設施工程師"}
+    pitch:
+      en: "Run fleets of vLLM replicas: routing, autoscaling, disaggregation and observability on Kubernetes."
+      zh: "管理成群的 vLLM 副本：在 Kubernetes 上處理路由、自動擴展、分離部署與可觀測性。"
+    skills:
+      en: ["Kubernetes and GPU scheduling", "Cache-aware load balancing", "P/D disaggregation and KV connectors", "Metrics, SLOs and alerting", "Multi-tenant rate limiting"]
+      zh: ["Kubernetes 與 GPU 排程", "感知快取的負載平衡", "P/D 分離部署與 KV connector", "指標、SLO 與告警", "多租戶限流"]
+    episodes: [E10, E20, E21, E24, E25]
+    proof:
+      en: ["A small cluster demo: 2 replicas + prefix-aware router + Grafana dashboard", "A write-up of hit-rate before and after cache-aware routing"]
+      zh: ["一個小型叢集展示：2 個副本 + 感知前綴的路由器 + Grafana 儀表板", "一篇比較感知快取路由前後命中率的文章"]
+  - id: applied
+    emoji: "🧩"
+    title: {en: "Applied LLM Engineer", zh: "應用 LLM 工程師"}
+    pitch:
+      en: "Build products on self-hosted models: structured output, tool calling, multi-LoRA, RAG. Knowing the engine makes your apps faster and cheaper."
+      zh: "在自架模型上打造產品：結構化輸出、工具呼叫、multi-LoRA、RAG。懂引擎，你的應用就更快、更便宜。"
+    skills:
+      en: ["OpenAI-compatible APIs and streaming", "Chat templates and tool parsers", "Structured output", "Prompt layout for prefix caching", "Evals"]
+      zh: ["相容 OpenAI 的 API 與串流", "Chat template 與工具解析器", "結構化輸出", "為 prefix caching 設計的 prompt 排列", "評測"]
+    episodes: [E01, E02, E10, E13, E18]
+    proof:
+      en: ["An app served by vLLM with a measured cost per 1k requests", "A demo that shows the latency change from reordering the prompt for prefix caching"]
+      zh: ["一個由 vLLM 服務、量測過每 1,000 次請求成本的應用", "一個展示「為 prefix caching 調整 prompt 順序」帶來延遲變化的 demo"]
+  - id: rl
+    emoji: "🎯"
+    title: {en: "RL Infrastructure Engineer", zh: "RL 基礎設施工程師"}
+    pitch:
+      en: "Keep reasoning-model training fed: rollout throughput, weight sync, memory juggling and numeric consistency."
+      zh: "讓推理模型的訓練不斷炊：rollout 吞吐量、權重同步、記憶體調度與數值一致性。"
+    skills:
+      en: ["Rollout engines (vLLM) inside RL frameworks", "Weight transfer (NCCL, RDMA, IPC)", "Sleep mode and memory management", "Logprob consistency and batch invariance"]
+      zh: ["RL 框架內的 rollout 引擎（vLLM）", "權重傳輸（NCCL、RDMA、IPC）", "Sleep mode 與記憶體管理", "Logprob 一致性與 batch invariance"]
+    episodes: [E04, E17, E22]
+    proof:
+      en: ["A GRPO toy run with vLLM rollouts and a throughput breakdown", "A measurement of trainer vs vLLM logprob differences"]
+      zh: ["一個用 vLLM 做 rollout 的 GRPO 小實驗，附吞吐量拆解", "一份訓練端與 vLLM 的 logprob 差異量測"]

@@ -4,6 +4,8 @@
 
 An independent, hands-on learning project maintained in `tjtanaa/vllm-academy`. The beginner course was seeded from the original `zero-to-vllm` materials prepared for this project, inspired by the learning progression of Datawhale's [zero-to-sglang](https://github.com/datawhalechina/zero-to-sglang). This is not an official vLLM course or a renamed implementation of SGLang.
 
+> 🎓 **New: [vLLM Academy Quest](academy/README.md)**: the community layer on top of this course. 28 bite-size bilingual episodes (EN / 繁體中文), 9 labs (three run on any laptop with plain Python), interview prep, a 🔮 Hot Take Court and a [Discord bot](discord_bot/README.md) that delivers, quizzes and levels it all up. Start in 60 seconds: `python academy/labs/batching_arena.py`
+
 ## Three phases, one learning journey
 
 | Phase | Goal | Entry point | Initial state |
@@ -56,6 +58,8 @@ course/             Lessons, source walkthrough and advanced workshop briefs
 mini_vllm/          Current small reference implementation
 tests/              CPU mechanism tests and repository-policy tests
 labs/               Build milestones, serving/benchmark recipes and checks
+academy/            Academy Quest: bilingual episodes, labs, quizzes, hot takes (community layer)
+discord_bot/        Discord bot that delivers Academy Quest (slash commands, XP, daily drops)
 phase2/             Version-by-version architecture and optimization notes
 phase3/             Teaching-engine evolution process and concept coverage
 versions/           Machine-readable upstream ↔ teaching-engine mapping

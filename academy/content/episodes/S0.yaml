@@ -1,0 +1,189 @@
+episodes:
+  - id: E01
+    season: S0
+    minutes: 15
+    title:
+      en: "ChatGPT is just a for-loop"
+      zh: "ChatGPT 其實只是一個 for 迴圈"
+    hook:
+      en: "Every chatbot you've ever used is one `for` loop calling the same function over and over. The billion-dollar engineering is everything *around* that loop."
+      zh: "你用過的每一個聊天機器人，都是一個 `for` 迴圈不停呼叫同一個函式。價值數十億美元的工程，全都在這個迴圈的**周圍**。"
+    aha:
+      en: |-
+        A language model is a function: give it tokens, it returns a probability for every possible *next* token. That's it. To write a reply, you run it in a loop: predict, pick one token, append it, repeat until an end token or a length limit.
+
+        ```python
+        for step in range(max_new_tokens):
+            probs = model(tokens)        # one forward pass
+            nxt = sample(probs)          # greedy, top-p, temperature...
+            tokens.append(nxt)
+            if nxt == eos: break
+        ```
+
+        A **serving engine** like vLLM owns that loop for thousands of users at once: who runs next, where their memory lives, how to batch them onto one GPU, and how to stream text back.
+      zh: |-
+        語言模型就是一個函式：給它一串 token，它回傳「下一個 token」可能是每一個字的機率。就這樣。要寫出一段回覆，就把它放進迴圈：預測、選一個 token、接上去，重複直到出現結束 token 或達到長度上限。
+
+        ```python
+        for step in range(max_new_tokens):
+            probs = model(tokens)        # 一次 forward
+            nxt = sample(probs)          # greedy、top-p、temperature…
+            tokens.append(nxt)
+            if nxt == eos: break
+        ```
+
+        像 vLLM 這樣的**推論服務引擎**，負責同時替成千上萬個使用者跑這個迴圈：誰先跑、記憶體放哪、怎麼把大家併成一批丟進同一張 GPU、怎麼把文字串流回去。
+    tldr:
+      en:
+        - "An LLM predicts one next token at a time (autoregressive generation)."
+        - "The model is the function; the engine is the loop plus scheduling, memory and streaming."
+        - "vLLM's job: run that loop for many users on shared GPUs, fast and cheap."
+      zh:
+        - "LLM 一次只預測下一個 token（自迴歸生成）。"
+        - "模型是那個函式；引擎是迴圈，再加上排程、記憶體管理與串流。"
+        - "vLLM 的任務：在共用的 GPU 上，替很多使用者又快又省地跑這個迴圈。"
+    pro:
+      en: "LLMs generate autoregressively: each forward pass produces a distribution over the next token, we sample one, append it, and repeat until EOS or a max length. The first pass over the prompt is *prefill*; each later one-token step is *decode*. A serving engine like vLLM owns the loop: request scheduling, KV-cache memory, batching across users, sampling and streaming."
+      zh: "LLM 以自迴歸方式生成：每次 forward 產生下一個 token 的機率分布，抽樣一個、接上去，重複到 EOS 或長度上限。第一次處理整段 prompt 叫 *prefill*；之後每次只處理一個新 token 叫 *decode*。像 vLLM 這樣的引擎負責整個迴圈：請求排程、KV cache 記憶體、跨使用者的批次處理、抽樣與串流輸出。"
+    followup:
+      en: "Why can't we generate all output tokens in parallel like we process the prompt?"
+      zh: "為什麼輸出的 token 不能像 prompt 那樣平行一次算完？"
+    lab: Q1
+    lab_hint:
+      en: "Start a real vLLM server on a free Colab GPU and watch tokens stream one by one."
+      zh: "在免費的 Colab GPU 上啟動真正的 vLLM 伺服器，看著 token 一個一個串流出來。"
+    deep_dive: phase1/redesign/lessons/00-first-request.md
+    code: [cli_serve, sampler]
+  - id: E02
+    season: S0
+    minutes: 15
+    title:
+      en: "Tokens: why \"strawberry\" breaks models and your bill"
+      zh: "Token：為什麼「strawberry」會讓模型出錯，也讓你的帳單變貴"
+    hook:
+      en: "Models never see letters. They see chunks called tokens, and you pay per chunk. That's why counting the r's in \"strawberry\" was hard, and why the same sentence costs different amounts on different models."
+      zh: "模型從來看不到字母。它看到的是叫做 token 的碎片，而你是按碎片付費的。這就是為什麼數「strawberry」裡有幾個 r 曾經很難，也是為什麼同一句話在不同模型上價格不同。"
+    aha:
+      en: |-
+        A tokenizer turns text into integer IDs from a fixed vocabulary (often 100k–250k entries). Common words become one token; rare words split into pieces, so "strawberry" may arrive as something like `str` `aw` `berry`. The model never sees the individual letters.
+
+        A Chinese character can be one token or several, depending on the tokenizer. That changes your cost and how much fits in the context window.
+
+        Chat apps don't send "messages" to the model either. A **chat template** serializes roles and special tokens into one flat token stream. Change the template and you change the model's input, and sometimes its behavior.
+      zh: |-
+        Tokenizer 會把文字轉成固定詞表（通常 10 萬到 25 萬個項目）裡的整數 ID。常見的字變成一個 token；少見的字會被切成好幾塊，所以「strawberry」進到模型時可能長得像 `str` `aw` `berry`。模型根本看不到一個一個字母。
+
+        一個中文字可能是一個 token，也可能是好幾個，取決於 tokenizer。這會影響費用，也影響 context window 能放多少東西。
+
+        聊天 App 也不是把「訊息」直接丟給模型。**Chat template** 會把角色和特殊 token 序列化成一條扁平的 token 串。換了 template，模型的輸入就變了，有時連行為都會變。
+    tldr:
+      en:
+        - "Models read token IDs, not characters. Pricing and context limits are counted in tokens."
+        - "The same text can be a different number of tokens on different models (and languages)."
+        - "Chat templates turn messages and roles into a single token stream with special tokens."
+      zh:
+        - "模型讀的是 token ID，不是字元。價格和 context 上限都用 token 計算。"
+        - "同一段文字在不同模型（和語言）上可能是不同數量的 token。"
+        - "Chat template 會把訊息與角色轉成一條帶有特殊 token 的 token 串。"
+    pro:
+      en: "Text is tokenized with a subword tokenizer such as BPE into IDs from a fixed vocabulary. Context windows, KV memory and pricing all scale with token count, not characters. For chat, the server renders messages through the model's chat template, adding role markers and special tokens, then tokenizes. A template mismatch is a classic silent-quality bug."
+      zh: "文字會用 BPE 之類的 subword tokenizer 轉成固定詞表裡的 ID。Context window、KV 記憶體與計價都跟 token 數成正比，不是跟字元數。聊天場景下，伺服器會用模型的 chat template 把訊息渲染出來（加上角色標記與特殊 token），再做 tokenize。Template 不一致是經典的「品質默默變差」bug。"
+    followup:
+      en: "Your fine-tuned model behaves worse in production than in your notebook. What's the first thing you check?"
+      zh: "你微調的模型在生產環境表現比在 notebook 差。你第一個檢查什麼？"
+    lab: Q1
+    lab_hint:
+      en: "In Q1, run the tokenizer cell: compare English vs 中文 token counts for the same sentence."
+      zh: "在 Q1 執行 tokenizer 那一格：比較同一句話英文與中文的 token 數。"
+    deep_dive: phase1/redesign/lessons/02-tokens.md
+    code: [renderer]
+  - id: E03
+    season: S0
+    minutes: 25
+    title:
+      en: "Build a Transformer in 130 lines"
+      zh: "130 行打造一個 Transformer"
+    hook:
+      en: "The architecture behind GPT, Llama and Qwen fits on two screens of Python. No PhD, no GPU. Just matrix multiplies and one clever mask."
+      zh: "GPT、Llama、Qwen 背後的架構，兩個螢幕的 Python 就裝得下。不用博士學位，不用 GPU，只要矩陣乘法和一個聰明的遮罩。"
+    aha:
+      en: |-
+        A decoder-only Transformer is a stack of identical blocks:
+
+        `embed → [attention → MLP] × N → norm → LM head → logits`
+
+        Inside attention, each token makes a **query** ("what am I looking for?"), a **key** ("what do I contain?") and a **value** ("what do I pass on?"). Scores are `softmax(QKᵀ/√d)`, and a **causal mask** stops a token from looking at the future. Residual connections and normalization keep a deep stack trainable.
+
+        Real models add RoPE positions, grouped-query attention, RMSNorm and SwiGLU. Same skeleton.
+      zh: |-
+        Decoder-only Transformer 就是一疊一模一樣的區塊：
+
+        `embed → [attention → MLP] × N → norm → LM head → logits`
+
+        在 attention 裡，每個 token 會產生 **query**（我在找什麼？）、**key**（我有什麼？）和 **value**（我要傳出去什麼？）。分數是 `softmax(QKᵀ/√d)`，再用**因果遮罩**（causal mask）防止 token 偷看未來。殘差連接與正規化讓很深的堆疊仍然能訓練。
+
+        真實模型再加上 RoPE 位置編碼、grouped-query attention、RMSNorm 和 SwiGLU。骨架一樣。
+    tldr:
+      en:
+        - "Decoder = embedding + N × (attention + MLP) + LM head."
+        - "The causal mask is what makes it a next-token predictor."
+        - "Llama/Qwen are this skeleton plus RoPE, GQA, RMSNorm and SwiGLU."
+      zh:
+        - "Decoder = embedding + N ×（attention + MLP）+ LM head。"
+        - "因果遮罩讓它成為「預測下一個 token」的模型。"
+        - "Llama/Qwen 就是這個骨架，加上 RoPE、GQA、RMSNorm、SwiGLU。"
+    pro:
+      en: "A decoder-only Transformer embeds tokens, then applies N blocks of masked multi-head self-attention and an MLP, each with residuals and normalization, and projects to vocabulary logits. Causal masking makes position i depend only on positions ≤ i, which enables both parallel training and KV caching at inference."
+      zh: "Decoder-only Transformer 先把 token 做 embedding，接著套用 N 個區塊：帶遮罩的多頭自注意力加上 MLP，每一層都有殘差與正規化，最後投影到詞表 logits。因果遮罩讓位置 i 只依賴 ≤ i 的位置，這讓訓練可以平行化，也讓推論可以用 KV cache。"
+    followup:
+      en: "Why does causal masking make KV caching *correct*, not just fast?"
+      zh: "為什麼因果遮罩讓 KV cache 是**正確的**，而不只是比較快？"
+    lab: null
+    lab_hint:
+      en: "`cd phase1/redesign && python -m labs.naive_transformer` and print every tensor shape. Then mutate a future token and check the past logits don't change."
+      zh: "`cd phase1/redesign && python -m labs.naive_transformer`，印出每個 tensor 的 shape。再改動一個「未來」的 token，確認過去位置的 logits 沒有改變。"
+    deep_dive: phase1/redesign/lessons/03-naive-transformer.md
+    code: [llama_model, attention_layers]
+  - id: E04
+    season: S0
+    minutes: 15
+    title:
+      en: "Training ≠ inference: the trillion-dollar split"
+      zh: "訓練 ≠ 推論：兆元等級的分水嶺"
+    hook:
+      en: "Training happens once. Inference happens every time anyone, anywhere, hits Enter. Guess which bill is now bigger."
+      zh: "訓練只做一次。推論是全世界任何人每按一次 Enter 就要做一次。猜猜哪一張帳單現在比較大？"
+    aha:
+      en: |-
+        **Training** sees the whole correct sequence, so every position is computed *in parallel* with teacher forcing. It's one giant throughput job over a fixed dataset.
+
+        **Inference** doesn't know the answer yet. Token 51 depends on token 50, so output is generated *sequentially*. It runs forever, for millions of users, with latency targets.
+
+        Different math shape, different bottleneck, different engineering. That's why inference engines like vLLM exist as their own field, and why inference engineers are hired separately from training engineers.
+      zh: |-
+        **訓練**時看得到完整的正確序列，所以每個位置都能用 teacher forcing *平行*計算。它是在固定資料集上跑的一個巨大吞吐量工作。
+
+        **推論**時還不知道答案。第 51 個 token 依賴第 50 個，所以輸出只能*依序*產生。它會一直跑下去，服務數百萬使用者，而且有延遲目標。
+
+        數學形狀不同、瓶頸不同、工程也不同。這就是為什麼 vLLM 這類推論引擎自成一個領域，也是為什麼推論工程師和訓練工程師是分開招募的。
+    tldr:
+      en:
+        - "Training: all positions in parallel, teacher forcing, throughput over a dataset."
+        - "Inference: sequential generation, per-user latency, runs for the lifetime of the product."
+        - "Lower training loss is not proof of good generations: you must test the generation loop."
+      zh:
+        - "訓練：所有位置平行計算、teacher forcing、追求資料集吞吐量。"
+        - "推論：依序生成、每個使用者都有延遲要求、跟著產品一直跑下去。"
+        - "訓練 loss 變低不代表生成品質好：一定要實測生成迴圈。"
+    pro:
+      en: "Training uses teacher forcing: inputs are the ground-truth sequence shifted by one, so all positions run in parallel and the bottleneck is compute. Inference generates autoregressively, so decode steps are sequential and usually memory-bandwidth bound. The cost model also differs: training is a one-off cost, inference scales with every user and token served."
+      zh: "訓練使用 teacher forcing：輸入是錯開一位的正確序列，所以所有位置可以平行跑，瓶頸在算力。推論是自迴歸生成，decode 步驟只能依序進行，通常卡在記憶體頻寬。成本模型也不同：訓練是一次性成本，推論則隨著每個使用者、每個 token 持續增加。"
+    followup:
+      en: "During RL post-training, which phase is training-like and which is inference-like?"
+      zh: "在 RL 後訓練中，哪個階段像訓練、哪個階段像推論？"
+    lab: null
+    lab_hint:
+      en: "`cd phase1/redesign && python -m labs.train_tiny`. Watch the loss drop, then compare with the autoregressive output."
+      zh: "`cd phase1/redesign && python -m labs.train_tiny`。看著 loss 下降，再跟自迴歸生成的輸出比較。"
+    deep_dive: phase1/redesign/lessons/04-training-inference.md
+    code: [weight_transfer]

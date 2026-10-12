@@ -1,0 +1,32 @@
+name: Academy content + Discord bot
+on:
+  push:
+    paths: ["academy/**", "discord_bot/**", ".github/workflows/academy-bot.yml"]
+  pull_request:
+    paths: ["academy/**", "discord_bot/**", ".github/workflows/academy-bot.yml"]
+permissions:
+  contents: read
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CJK fonts for image cards
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+      - name: Install bot dependencies
+        run: python -m pip install -r discord_bot/requirements-dev.txt
+      - name: Validate content pack
+        working-directory: discord_bot
+        run: python -m academy_bot --check
+      - name: Zero-install labs run end to end
+        run: |
+          python academy/labs/paged_playground.py --scenario agent --no-color --delay 0
+          python academy/labs/batching_arena.py --no-color
+          python academy/labs/kv_budget.py --model llama-3.1-70b --context 131072 --gpus 4 --no-color
+      - name: Bot tests (offline, no token)
+        working-directory: discord_bot
+        run: python -m pytest -q

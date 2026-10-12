@@ -1,0 +1,12 @@
+# Run from the repo root:  docker compose -f discord_bot/docker-compose.yml up -d --build
+services:
+  academy-bot:
+    build:
+      context: ..
+      dockerfile: discord_bot/Dockerfile
+    env_file: .env
+    volumes:
+      - academy-data:/data
+    restart: unless-stopped
+volumes:
+  academy-data:
