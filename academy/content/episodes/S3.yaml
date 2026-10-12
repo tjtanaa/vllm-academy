@@ -1,0 +1,197 @@
+episodes:
+  - id: E13
+    season: S3
+    minutes: 30
+    title:
+      en: "Follow one request through a million lines of vLLM"
+      zh: "跟著一個請求，穿越一百萬行 vLLM 程式碼"
+    hook:
+      en: "vLLM has over a million lines of Python. You only need twelve stops to understand how a request flows. Learn them and the codebase suddenly feels small."
+      zh: "vLLM 有超過一百萬行 Python。但你只需要記住 12 站，就能看懂一個請求怎麼流動。記住它們，整個程式碼庫突然就變小了。"
+    aha:
+      en: |-
+        **Front of house (API process):** `vllm serve` → HTTP route → `OpenAIServingChat` → renderer (chat template + tokenize) → `AsyncLLM.generate` → `InputProcessor` builds an `EngineCoreRequest`.
+
+        **Over ZMQ to the engine core process:** `EngineCore.step()` → `Scheduler.schedule()` → `KVCacheManager` (prefix hits + new blocks).
+
+        **Workers (one per GPU):** `GPUModelRunner.execute_model()` → model forward → attention backend → `Sampler`.
+
+        **Back out:** `Scheduler.update_from_output()` → `OutputProcessor` → incremental detokenizer → streamed back over SSE.
+
+        Two big ideas: the **API server and the engine core are separate processes** (so tokenization doesn't block the GPU loop), and the **scheduler never touches tensors**. It only decides *how many tokens* each request gets.
+      zh: |-
+        **前台（API 行程）：** `vllm serve` → HTTP 路由 → `OpenAIServingChat` → renderer（chat template + tokenize）→ `AsyncLLM.generate` → `InputProcessor` 建立 `EngineCoreRequest`。
+
+        **透過 ZMQ 送到 engine core 行程：** `EngineCore.step()` → `Scheduler.schedule()` → `KVCacheManager`（前綴命中 + 配置新 block）。
+
+        **Worker（每張 GPU 一個）：** `GPUModelRunner.execute_model()` → 模型 forward → attention backend → `Sampler`。
+
+        **回程：** `Scheduler.update_from_output()` → `OutputProcessor` → 增量 detokenizer → 用 SSE 串流回去。
+
+        兩個大觀念：**API server 和 engine core 是不同的行程**（所以 tokenize 不會擋住 GPU 迴圈），而且**排程器從來不碰 tensor**，它只決定每個請求這一步能拿到*幾個 token*。
+    tldr:
+      en:
+        - "12 stops: CLI → route → serving → renderer → AsyncLLM → core client → EngineCore → Scheduler → KV manager → model runner → model/attention → sampler/output."
+        - "API frontend and engine core run in separate processes, connected by ZMQ."
+        - "The scheduler decides token counts; workers do the tensor math."
+      zh:
+        - "12 站：CLI → 路由 → serving → renderer → AsyncLLM → core client → EngineCore → Scheduler → KV manager → model runner → 模型/attention → sampler/輸出。"
+        - "API 前端與 engine core 在不同行程執行，用 ZMQ 連接。"
+        - "排程器決定 token 數；worker 負責 tensor 運算。"
+    pro:
+      en: "In vLLM V1 the OpenAI-compatible frontend renders and tokenizes requests and passes them to AsyncLLM, which sends EngineCoreRequests over ZMQ to a separate EngineCore process. Each step the Scheduler assigns token counts per request under a budget and the KV cache manager allocates blocks, including prefix-cache hits. The executor fans the SchedulerOutput out to GPU workers, whose model runner builds inputs, runs the model through the platform's attention backend and samples. Outputs flow back through the OutputProcessor and incremental detokenizer to the client stream."
+      zh: "在 vLLM V1 中，相容 OpenAI 的前端負責渲染與 tokenize 請求，交給 AsyncLLM，再透過 ZMQ 把 EngineCoreRequest 送到獨立的 EngineCore 行程。每一步，Scheduler 在預算內替每個請求分配 token 數，KV cache manager 配置 block（包含前綴快取命中）。Executor 把 SchedulerOutput 發給各 GPU worker，由 model runner 準備輸入、透過該平台的 attention backend 執行模型並抽樣。輸出再經過 OutputProcessor 與增量 detokenizer 串流回客戶端。"
+    followup:
+      en: "Why put the engine core in a separate process from the API server?"
+      zh: "為什麼要把 engine core 和 API server 放在不同行程？"
+    lab: null
+    lab_hint:
+      en: "Type `/trace` in Discord and click through all 12 stops, opening each permalink."
+      zh: "在 Discord 輸入 `/trace`，點完全部 12 站，打開每一個永久連結。"
+    deep_dive: phase1/redesign/lessons/09-system-map.md
+    code: [api_router, chat_serving, async_llm, engine_core, scheduler, model_runner]
+  - id: E14
+    season: S3
+    minutes: 30
+    title:
+      en: "The whole scheduler is one function. Read it."
+      zh: "整個排程器就是一個函式，讀它就對了"
+    hook:
+      en: "`Scheduler.schedule()` decides who runs, every step, for every user on the server. It's the most important function in vLLM, and you can read it this week."
+      zh: "`Scheduler.schedule()` 在每一步替伺服器上的每個使用者決定誰能跑。它是 vLLM 最重要的函式，而你這週就讀得完。"
+    aha:
+      en: |-
+        Open `vllm/v1/core/sched/scheduler.py` and find `def schedule`. Read it with three questions in mind:
+
+        1. **Budget:** where is `token_budget` initialized, and what decrements it?
+        2. **Running first:** the loop over `self.running` gives in-flight requests their tokens before any waiting request is considered.
+        3. **Memory:** `kv_cache_manager.allocate_slots(...)` can fail. Then the scheduler **preempts** a request (see `_preempt_request`), freeing its blocks so others can continue. It gets recomputed later.
+
+        The output, `SchedulerOutput`, is just bookkeeping: request IDs, token counts, block IDs. No tensors. That makes the scheduler testable on a CPU.
+      zh: |-
+        打開 `vllm/v1/core/sched/scheduler.py`，找到 `def schedule`。帶著三個問題讀：
+
+        1. **預算：** `token_budget` 在哪裡初始化？什麼會讓它減少？
+        2. **正在跑的優先：** 對 `self.running` 的迴圈會先給進行中的請求 token，之後才考慮等待中的請求。
+        3. **記憶體：** `kv_cache_manager.allocate_slots(...)` 可能失敗。這時排程器會**搶占**（preempt）某個請求（看 `_preempt_request`），釋放它的 block 讓其他請求繼續。它之後會被重新計算。
+
+        輸出的 `SchedulerOutput` 只是帳本：請求 ID、token 數、block ID。沒有 tensor。所以排程器可以在 CPU 上測試。
+    tldr:
+      en:
+        - "schedule() hands out a per-step token budget: running requests first, then waiting ones."
+        - "If KV allocation fails, a request is preempted and recomputed later."
+        - "SchedulerOutput has no tensors, so you can unit-test the scheduler on CPU."
+      zh:
+        - "schedule() 每一步分配 token 預算：先給正在跑的請求，再給等待中的。"
+        - "KV 配置失敗時，某個請求會被搶占，之後再重新計算。"
+        - "SchedulerOutput 沒有 tensor，所以可以在 CPU 上對排程器做單元測試。"
+    pro:
+      en: "vLLM's scheduler is token-centric: each request tracks computed vs total tokens, and each step the scheduler allocates tokens from a budget, first to running requests and then to waiting ones, subject to KV block availability and limits like max_num_seqs. On allocation failure it preempts a running request (the lowest-priority one, or under FCFS the most recently admitted), freeing its blocks for later recompute. The result is a tensor-free SchedulerOutput the workers execute."
+      zh: "vLLM 的排程器以 token 為中心：每個請求追蹤「已計算」與「總共」的 token 數，每一步排程器從預算中分配 token，先給正在跑的請求、再給等待中的請求，同時受 KV block 是否足夠以及 max_num_seqs 等上限限制。配置失敗時，它會搶占一個執行中的請求（優先權最低的；在 FCFS 下則是最晚進場的），釋放其 block，之後重新計算。結果是一個不含 tensor 的 SchedulerOutput，交給 worker 執行。"
+    followup:
+      en: "Recompute vs swap-to-CPU on preemption: when would each be better?"
+      zh: "搶占時要「重新計算」還是「換出到 CPU」？各自什麼時候比較好？"
+    lab: Q6
+    lab_hint:
+      en: "Do hunts H1–H5 with `/hunt` in Discord."
+      zh: "在 Discord 用 `/hunt` 完成尋寶 H1–H5。"
+    deep_dive: course/part3/11-source-walkthrough.md
+    code: [scheduler, kv_cache_manager]
+  - id: E15
+    season: S3
+    minutes: 25
+    title:
+      en: "Where the GPU actually works: runners, graphs and attention backends"
+      zh: "GPU 真正在工作的地方：runner、graph 與 attention backend"
+    hook:
+      en: "The same Llama runs different kernels on NVIDIA, AMD, Intel, TPU and CPU. One folder decides which, and it's where many hardware-company jobs live."
+      zh: "同一個 Llama，在 NVIDIA、AMD、Intel、TPU、CPU 上跑的是不同的 kernel。決定用哪一個的就在某個資料夾裡，而很多硬體公司的職缺也就在那裡。"
+    aha:
+      en: |-
+        **Model runner** (`vllm/v1/worker/gpu_model_runner.py`, plus the experimental **Model Runner V2** in `vllm/v1/worker/gpu/`): turns the SchedulerOutput into tensors (input IDs, positions, block tables, slot mappings), runs the model and calls the sampler.
+
+        **CUDA graphs:** launching hundreds of small kernels per decode step is slow on the CPU side. vLLM captures graphs for common batch sizes and replays them.
+
+        **torch.compile** (`vllm/compilation/`) traces the model and applies fusion passes.
+
+        **Attention backends** (`vllm/v1/attention/backends/`): FlashAttention, FlashInfer, Triton, ROCm AITER, MLA variants, CPU and more. `selector.py` picks one per platform and model.
+
+        **Platforms** (`vllm/platforms/`): cuda, rocm, xpu, tpu, cpu. Out-of-tree plugins add more, such as Ascend, Tenstorrent and Apple Silicon.
+      zh: |-
+        **Model runner**（`vllm/v1/worker/gpu_model_runner.py`，以及實驗中的 **Model Runner V2**，在 `vllm/v1/worker/gpu/`）：把 SchedulerOutput 轉成 tensor（input IDs、positions、block tables、slot mapping），執行模型並呼叫 sampler。
+
+        **CUDA graph：** 每個 decode 步驟要發射幾百個小 kernel，CPU 端會很慢。vLLM 會針對常見的 batch size 擷取 graph 再重播。
+
+        **torch.compile**（`vllm/compilation/`）追蹤模型並套用融合（fusion）最佳化。
+
+        **Attention backend**（`vllm/v1/attention/backends/`）：FlashAttention、FlashInfer、Triton、ROCm AITER、MLA 變體、CPU 等。`selector.py` 依平台與模型挑選一個。
+
+        **平台**（`vllm/platforms/`）：cuda、rocm、xpu、tpu、cpu。Out-of-tree 外掛再加上更多，例如 Ascend、Tenstorrent、Apple Silicon。
+    tldr:
+      en:
+        - "Model runner: SchedulerOutput → tensors → forward → sample."
+        - "CUDA graphs and torch.compile cut CPU launch overhead and fuse ops."
+        - "Attention backends and platforms make vLLM hardware-portable, and they're a big source of jobs."
+      zh:
+        - "Model runner：SchedulerOutput → tensor → forward → 抽樣。"
+        - "CUDA graph 與 torch.compile 降低 CPU 發射開銷並融合運算。"
+        - "Attention backend 與平台層讓 vLLM 可以跨硬體，也是大量職缺的來源。"
+    pro:
+      en: "The worker's model runner materializes the scheduler's decision into device tensors (flattened tokens, positions, block tables and slot mappings), runs the model, and samples. Decode steps are short, so CPU launch overhead matters; vLLM uses torch.compile with custom fusion passes and CUDA-graph capture for common batch shapes. Attention is pluggable: a selector picks a backend per platform, model type and dtype, which is how the same model runs on NVIDIA, AMD, Intel and other hardware."
+      zh: "Worker 裡的 model runner 把排程器的決定具體化成裝置上的 tensor（攤平的 token、positions、block tables、slot mappings），執行模型並抽樣。Decode 步驟很短，CPU 發射開銷很關鍵，所以 vLLM 使用 torch.compile 搭配客製的融合最佳化，並對常見 batch 形狀擷取 CUDA graph。Attention 是可抽換的：selector 依平台、模型類型與 dtype 選 backend，這就是同一個模型能在 NVIDIA、AMD、Intel 等硬體上執行的方式。"
+    followup:
+      en: "Why do CUDA graphs need fixed batch sizes, and how does vLLM handle a batch of 37?"
+      zh: "為什麼 CUDA graph 需要固定的 batch size？vLLM 怎麼處理 batch 為 37 的情況？"
+    lab: Q6
+    lab_hint:
+      en: "Hunts H8 and H14: find the attention selector and the Model Runner V2 directory."
+      zh: "尋寶 H8 與 H14：找到 attention selector 和 Model Runner V2 的資料夾。"
+    deep_dive: course/part3/12-backends-and-graphs.md
+    code: [model_runner, model_runner_v2, attention_selector, cudagraph, platforms]
+  - id: E16
+    season: S3
+    minutes: 30
+    title:
+      en: "Add a model to vLLM: the classic first big PR"
+      zh: "幫 vLLM 加一個新模型：經典的第一個大 PR"
+    hook:
+      en: "New open models drop almost every week, and each one needs someone to wire it into vLLM. Model support is the most visible way a newcomer becomes a known contributor."
+      zh: "新的開源模型幾乎每週都在發布，每一個都需要有人把它接進 vLLM。模型支援是新人變成知名貢獻者最顯眼的一條路。"
+    aha:
+      en: |-
+        Models live in `vllm/model_executor/models/` (about 280 files). `registry.py` maps the Hugging Face architecture name to a module and class, e.g. `"LlamaForCausalLM": ("llama", "LlamaForCausalLM")`.
+
+        A native implementation reuses vLLM building blocks: `QKVParallelLinear` / `RowParallelLinear` (tensor-parallel ready), `get_rope`, `RMSNorm`, vLLM's `Attention` layer (paged KV for free), then a `load_weights` that maps checkpoint names onto these layers.
+
+        Read `llama.py` top to bottom once. Most decoder-only models are "Llama plus a twist."
+
+        Many architectures can also run through the **Transformers backend** with no native code, which is a great baseline to compare correctness against.
+      zh: |-
+        模型放在 `vllm/model_executor/models/`（大約 280 個檔案）。`registry.py` 把 Hugging Face 的架構名稱對應到模組與類別，例如 `"LlamaForCausalLM": ("llama", "LlamaForCausalLM")`。
+
+        原生實作會重複使用 vLLM 的積木：`QKVParallelLinear`／`RowParallelLinear`（已支援 tensor parallel）、`get_rope`、`RMSNorm`、vLLM 的 `Attention` 層（直接拿到分頁 KV），再寫一個 `load_weights`，把 checkpoint 的權重名稱對應到這些層。
+
+        把 `llama.py` 從頭到尾讀一次。大多數 decoder-only 模型都是「Llama 再加一點變化」。
+
+        很多架構也能透過 **Transformers backend** 執行，不需要原生程式碼，這是拿來比對正確性的好基準。
+    tldr:
+      en:
+        - "registry.py maps HF architecture names → vLLM model classes."
+        - "Native models compose TP-ready layers, RoPE, norms and the paged Attention layer."
+        - "Validate against the HF / Transformers-backend output before claiming support."
+      zh:
+        - "registry.py 把 HF 架構名稱對應到 vLLM 的模型類別。"
+        - "原生模型由支援 TP 的線性層、RoPE、正規化與分頁 Attention 層組合而成。"
+        - "宣稱支援之前，先和 HF／Transformers backend 的輸出比對。"
+    pro:
+      en: "To add a model I'd start from the closest existing implementation, usually llama.py, map the config to vLLM's tensor-parallel layers, RoPE and Attention, write load_weights including fused QKV and gate-up mappings, and register the architecture. Then I'd validate greedy outputs and logprobs against Hugging Face on a few prompts, test with TP=2, and add it to the supported-models docs and tests."
+      zh: "要加一個模型，我會從最接近的既有實作開始（通常是 llama.py），把 config 對應到 vLLM 的 tensor parallel 層、RoPE 與 Attention，寫好 load_weights（包含融合的 QKV 與 gate-up 對應），再註冊架構。接著在幾個 prompt 上把 greedy 輸出與 logprobs 和 Hugging Face 比對，用 TP=2 測試，最後加進支援模型文件與測試。"
+    followup:
+      en: "Your new model's outputs match HF at TP=1 but are garbage at TP=2. Where do you look?"
+      zh: "你的新模型在 TP=1 時和 HF 一致，但 TP=2 時輸出亂掉了。你會去哪裡找問題？"
+    lab: Q6
+    lab_hint:
+      en: "Hunt H11: find which module and class serve `Qwen3ForCausalLM`. Then read that file next to `llama.py`."
+      zh: "尋寶 H11：找出哪個模組與類別負責 `Qwen3ForCausalLM`。再把那個檔案和 `llama.py` 並排讀。"
+    deep_dive: phase1/redesign/lessons/05-real-models.md
+    code: [model_registry, llama_model, attention_layers]

@@ -1,0 +1,185 @@
+episodes:
+  - id: E09
+    season: S2
+    minutes: 20
+    title:
+      en: "Continuous batching: how one GPU serves a thousand users"
+      zh: "Continuous batching：一張 GPU 如何服務一千個使用者"
+    hook:
+      en: "Static batching makes every user wait for the slowest request in their batch. Continuous batching lets people hop on and off the bus at every stop."
+      zh: "Static batching 讓每個人都要等同一批裡最慢的那個請求。Continuous batching 讓大家可以在每一站自由上下公車。"
+    aha:
+      en: |-
+        **Static batching:** collect 8 requests, run until *all 8* finish. One request wants 2,000 tokens and the other seven want 20, so seven slots idle for ~1,980 steps.
+
+        **Continuous (iteration-level) batching**, introduced by the Orca paper: the scheduler decides membership **every step**. A finished request leaves immediately and a waiting one joins on the next step. The GPU batch stays full.
+
+        In vLLM, each step the scheduler hands out a **token budget**. Running requests get their next token first, then waiting requests are admitted if KV blocks are available.
+      zh: |-
+        **Static batching：** 收集 8 個請求，跑到*全部 8 個*都結束。如果一個請求要 2,000 個 token、另外七個只要 20 個，那七個位置會空轉大約 1,980 步。
+
+        **Continuous（iteration-level）batching**，來自 Orca 論文：排程器在**每一步**決定誰在批次裡。完成的請求立刻離開，等待中的請求下一步就加入。GPU 的批次一直是滿的。
+
+        在 vLLM 裡，排程器每一步都會發出一份 **token 預算**。正在跑的請求先拿到下一個 token 的額度，接著如果還有 KV block，就讓等待中的請求進場。
+    tldr:
+      en:
+        - "Static batching wastes slots waiting for the longest request."
+        - "Continuous batching re-decides the batch every iteration."
+        - "vLLM schedules a token budget per step; admission depends on free KV blocks."
+      zh:
+        - "Static batching 會為了等最長的請求而浪費位置。"
+        - "Continuous batching 每一個迭代都重新決定批次成員。"
+        - "vLLM 每一步分配 token 預算；能不能進場取決於還有沒有空的 KV block。"
+    pro:
+      en: "Continuous batching schedules at iteration granularity: after every forward pass finished sequences are evicted and new ones admitted, so the batch stays full despite very different output lengths. That raises throughput dramatically over request-level static batching without hurting latency much. The binding constraint becomes KV memory, which is why it pairs with paged KV."
+      zh: "Continuous batching 以迭代為單位排程：每次 forward 之後，完成的序列離開、新的序列加入，所以即使輸出長度差很多，批次仍然保持滿載。相較於以請求為單位的 static batching，吞吐量大幅提升，延遲也不太受影響。這時主要的限制變成 KV 記憶體，所以它和分頁式 KV 是一對好搭檔。"
+    followup:
+      en: "What happens when the KV cache runs out mid-generation? What are vLLM's options?"
+      zh: "生成到一半 KV cache 用完了會怎樣？vLLM 有哪些選擇？"
+    lab: Q3
+    lab_hint:
+      en: "`python academy/labs/batching_arena.py` races static vs continuous batching on the same workload."
+      zh: "`python academy/labs/batching_arena.py` 讓 static 與 continuous batching 在同一份工作負載上對決。"
+    deep_dive: phase1/redesign/lessons/07-scheduling.md
+    code: [scheduler]
+  - id: E10
+    season: S2
+    minutes: 20
+    title:
+      en: "Prefix caching: free speed you're probably ignoring"
+      zh: "Prefix caching：你可能一直沒用到的免費加速"
+    hook:
+      en: "Your 2,000-token system prompt is identical for every user. Compute it once, reuse it forever. Reorder your prompt the right way and time-to-first-token can drop dramatically."
+      zh: "你那 2,000 個 token 的 system prompt 對每個使用者都一樣。算一次、永遠重複使用。把 prompt 的順序排對，首個 token 延遲可以大幅下降。"
+    aha:
+      en: |-
+        vLLM gives every **full** KV block an identity:
+
+        `hash(parent_block_hash, tokens_in_this_block, extra_keys)`
+
+        Chaining the parent hash means a block only matches if **everything before it** matched too. When a new request arrives, vLLM walks its blocks and reuses every leading block already in the cache. Those tokens skip prefill entirely.
+
+        Freed blocks aren't wiped. They sit in an eviction queue and can still be hit until the memory is needed (LRU-style).
+
+        **Practical rule:** put stable content first (system prompt, tools, documents) and per-user content last. One changed token early in the prompt breaks every block after it.
+      zh: |-
+        vLLM 給每個**填滿的** KV block 一個身分：
+
+        `hash(上一個 block 的 hash, 這個 block 的 tokens, 額外的 key)`
+
+        把上一個 block 的 hash 串進來，代表一個 block 只有在**前面所有內容**都相同時才會命中。新請求進來時，vLLM 依序檢查它的 block，重複使用所有已經在快取裡的前導 block。這些 token 完全跳過 prefill。
+
+        釋放的 block 不會被清掉。它們會排在淘汰佇列裡，在記憶體真的需要之前都還能被命中（類似 LRU）。
+
+        **實務原則：** 把固定內容放前面（system prompt、工具定義、文件），每個使用者不同的內容放後面。Prompt 前段改了一個 token，後面所有 block 就都對不上了。
+    tldr:
+      en:
+        - "Full blocks are identified by a chained hash of their tokens and all preceding tokens."
+        - "Matching leading blocks are reused, so those tokens skip prefill."
+        - "Order prompts from most-shared to least-shared to maximize hits."
+      zh:
+        - "填滿的 block 用「自己的 tokens + 前面所有 tokens」的串接 hash 來識別。"
+        - "相符的前導 block 會被重複使用，這些 token 就不用再 prefill。"
+        - "Prompt 依「最常共用 → 最不常共用」排序，命中率最高。"
+    pro:
+      en: "Automatic prefix caching hashes each full KV block together with its parent block's hash and extra keys such as LoRA or multimodal identifiers, then keeps a hash → block map. A new request reuses the longest cached chain of leading blocks and only prefills the rest. Freed blocks remain hittable until evicted. It's on by default in current vLLM, and its effectiveness depends on prompt layout and routing requests with shared prefixes to the same replica."
+      zh: "Automatic prefix caching 會把每個填滿的 KV block 連同上一個 block 的 hash 以及額外的 key（例如 LoRA 或多模態識別碼）一起做 hash，並維護 hash → block 的對照表。新請求重複使用最長的已快取前導 block 鏈，只 prefill 剩下的部分。被釋放的 block 在被淘汰之前都還能命中。目前 vLLM 預設開啟，效果取決於 prompt 排列方式，以及能否把共用前綴的請求路由到同一個副本。"
+    followup:
+      en: "You run 8 replicas behind a round-robin load balancer and the hit rate is terrible. Why, and how do you fix it?"
+      zh: "你在輪詢式負載平衡器後面跑 8 個副本，命中率很差。為什麼？怎麼修？"
+    lab: Q2
+    lab_hint:
+      en: "`python academy/labs/paged_playground.py --scenario prefix` shows two chats sharing the system-prompt blocks."
+      zh: "`python academy/labs/paged_playground.py --scenario prefix` 會顯示兩段對話共用 system prompt 的 block。"
+    deep_dive: course/part2/09-prefix-cache.md
+    code: [prefix_hash, block_pool]
+  - id: E11
+    season: S2
+    minutes: 15
+    title:
+      en: "Chunked prefill: stop one giant prompt from freezing everyone"
+      zh: "Chunked prefill：別讓一個巨大的 prompt 卡住所有人"
+    hook:
+      en: "Someone pastes a 100k-token PDF. Without chunking, every other user's stream stutters while the GPU chews on it. With chunking, nobody notices."
+      zh: "有人貼上一份 10 萬 token 的 PDF。沒有切塊的話，GPU 在處理它的時候，其他人的串流都會卡頓。有切塊的話，沒人感覺得到。"
+    aha:
+      en: |-
+        Each step has a **token budget** (`max_num_batched_tokens`). Decoding requests need just 1 token each. A long prefill could eat the entire budget, and many steps in a row, starving everyone else.
+
+        **Chunked prefill** caps how much of one prompt runs per step, so every step = all decodes + a slice of the big prompt.
+
+        vLLM's V1 scheduler doesn't even have separate "prefill steps" and "decode steps". Every request just has `num_computed_tokens` chasing `num_tokens`, and the scheduler hands out tokens until the budget is spent.
+
+        Trade-off: the big prompt's time-to-first-token goes up a little; everyone else's inter-token latency stays smooth.
+      zh: |-
+        每一步都有一份 **token 預算**（`max_num_batched_tokens`）。正在 decode 的請求每個只要 1 個 token。一個很長的 prefill 可能把整份預算吃光，而且連續好幾步都這樣，其他人就餓死了。
+
+        **Chunked prefill** 限制每一步最多處理一個 prompt 的多少 token，所以每一步 = 所有的 decode + 大 prompt 的一小段。
+
+        vLLM 的 V1 排程器甚至沒有分開的「prefill 步驟」和「decode 步驟」。每個請求只是有一個 `num_computed_tokens` 在追 `num_tokens`，排程器一直分配 token，直到預算用完。
+
+        取捨：大 prompt 的首個 token 延遲會稍微增加；其他人的 token 間延遲則保持平順。
+    tldr:
+      en:
+        - "Each step has a token budget; long prefills can starve decodes."
+        - "Chunked prefill splits long prompts across steps, mixed with decodes."
+        - "In vLLM V1 every request simply advances num_computed_tokens toward num_tokens."
+      zh:
+        - "每一步都有 token 預算；長 prefill 可能讓 decode 餓死。"
+        - "Chunked prefill 把長 prompt 分散到多個步驟，和 decode 混在一起跑。"
+        - "在 vLLM V1，每個請求只是把 num_computed_tokens 往 num_tokens 推進。"
+    pro:
+      en: "Chunked prefill bounds per-step work with a token budget and splits long prompts into chunks that are co-scheduled with ongoing decodes. Mixed batches also make better use of compute, since decode alone is memory-bound. You trade slightly higher TTFT for the long request against much more stable ITL and better overall throughput. The chunk size and budget are tuning knobs between TTFT and ITL."
+      zh: "Chunked prefill 用 token 預算限制每一步的工作量，把長 prompt 切成多段，和正在進行的 decode 一起排程。混合批次也更能利用算力，因為單純 decode 受限於記憶體。代價是長請求的 TTFT 略為上升，換來穩定得多的 ITL 與更好的整體吞吐量。Chunk 大小和預算就是 TTFT 與 ITL 之間的調整旋鈕。"
+    followup:
+      en: "If you set max_num_batched_tokens very small, what gets worse? Very large?"
+      zh: "如果把 max_num_batched_tokens 設得很小，什麼會變差？設得很大呢？"
+    lab: Q3
+    lab_hint:
+      en: "`python academy/labs/batching_arena.py --chunk 512` and compare the decode stall chart with `--chunk 0`."
+      zh: "`python academy/labs/batching_arena.py --chunk 512`，再和 `--chunk 0` 的 decode 卡頓圖比較。"
+    deep_dive: course/part2/08-scheduling.md
+    code: [scheduler]
+  - id: E12
+    season: S2
+    minutes: 30
+    title:
+      en: "Boss fight: your mini-vLLM passes 30 tests"
+      zh: "魔王關：你的 mini-vLLM 通過 30 個測試"
+    hook:
+      en: "Reading about engines is easy. Building one that doesn't leak a single block under cancellation, eviction and late arrivals is the real flex."
+      zh: "讀引擎的文章很簡單。真正厲害的是寫出一個在取消、淘汰、半路加入的情況下，一個 block 都不會漏掉的引擎。"
+    aha:
+      en: |-
+        The repo's `mini_vllm/` is a ~500-line CPU engine with paged KV, ref-counted blocks, chained prefix reuse, token-budget scheduling and cancellation. Your mission: rebuild it milestone by milestone **before** you peek.
+
+        M1 dense decoder → M2 incremental KV → M3 pages and block tables → M4 queues and token budget → M5 prefix identity and reuse → M6 lifecycle stress.
+
+        The tests encode the invariants maintainers care about: cached logits equal dense logits, no block freed while in use, no double release, everything returned after `close()`.
+      zh: |-
+        Repo 裡的 `mini_vllm/` 是一個約 500 行的 CPU 引擎，有分頁 KV、參照計數 block、串接式前綴重用、token 預算排程與取消功能。你的任務：在偷看答案**之前**，一個里程碑一個里程碑地把它重寫出來。
+
+        M1 dense decoder → M2 增量 KV → M3 分頁與 block table → M4 佇列與 token 預算 → M5 前綴識別與重用 → M6 生命週期壓力測試。
+
+        這些測試寫的都是維護者在乎的不變量：有快取的 logits 等於 dense logits、使用中的 block 不會被釋放、不會重複釋放、`close()` 之後所有東西都歸還。
+    tldr:
+      en:
+        - "Six milestones from dense decoder to a lifecycle-safe engine."
+        - "Tests are the spec: equivalence, ownership and cleanup invariants."
+        - "Try mutation challenges: break one rule and see which test catches it."
+      zh:
+        - "六個里程碑：從 dense decoder 到生命週期安全的引擎。"
+        - "測試就是規格：等價性、所有權與清理的不變量。"
+        - "挑戰突變測試：故意破壞一條規則，看哪個測試抓到它。"
+    pro:
+      en: "I built a small paged-KV inference engine: a block pool with reference counts, per-request block tables, chained-hash prefix reuse limited to full blocks, and a token-budget scheduler with cancellation. I validated it by checking cached-vs-dense logit equivalence across chunk boundaries and with lifecycle tests for eviction, exhaustion and cleanup. It's deliberately serial, so I can explain exactly what production adds."
+      zh: "我做過一個小型的分頁 KV 推論引擎：有參照計數的 block pool、每個請求的 block table、只針對填滿 block 的串接 hash 前綴重用，以及支援取消的 token 預算排程器。驗證方式是檢查跨 chunk 邊界時有快取與 dense 的 logits 是否一致，並用生命週期測試涵蓋淘汰、資源耗盡與清理。它刻意是序列執行的，所以我可以精確說明生產環境多做了哪些事。"
+    followup:
+      en: "Your engine is correct but slow. What are the first three things production vLLM does differently?"
+      zh: "你的引擎是正確的，但很慢。生產版 vLLM 最先做的三件不同的事是什麼？"
+    lab: Q5
+    lab_hint:
+      en: "Follow `labs/MILESTONES.md`. Run `python -m pytest -q` until it's green."
+      zh: "照著 `labs/MILESTONES.md` 做。一直跑 `python -m pytest -q` 直到全綠。"
+    deep_dive: labs/MILESTONES.md
+    code: [scheduler, kv_cache_manager, block_pool]

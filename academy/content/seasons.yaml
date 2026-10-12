@@ -1,0 +1,142 @@
+# Seasons group episodes. Colors are used by the bot embeds and the image cards.
+seasons:
+  - id: S0
+    emoji: "🔤"
+    color: "#8B5CF6"
+    title: {en: "Hello, Token", zh: "你好，Token"}
+    tagline:
+      en: "How an LLM actually writes text, from tokens to a Transformer you build yourself."
+      zh: "LLM 到底怎麼寫出文字：從 token 到你親手打造的 Transformer。"
+  - id: S1
+    emoji: "🧱"
+    color: "#F59E0B"
+    title: {en: "The Memory Wall", zh: "記憶體之牆"}
+    tagline:
+      en: "Why inference is hard: bandwidth, the KV cache, and the paging trick that launched vLLM."
+      zh: "推論為什麼難：頻寬、KV cache，以及讓 vLLM 一戰成名的分頁技巧。"
+  - id: S2
+    emoji: "🛠️"
+    color: "#06B6D4"
+    title: {en: "Build mini-vLLM", zh: "親手打造 mini-vLLM"}
+    tagline:
+      en: "Continuous batching, prefix caching and chunked prefill, built by you and checked by tests."
+      zh: "Continuous batching、prefix caching、chunked prefill，自己動手寫，交給測試把關。"
+  - id: S3
+    emoji: "🧭"
+    color: "#10B981"
+    title: {en: "Inside vLLM", zh: "vLLM 原始碼探險"}
+    tagline:
+      en: "Navigate a million lines of production code like you wrote them."
+      zh: "在一百萬行生產等級程式碼裡，走得像自己寫的一樣熟。"
+  - id: S4
+    emoji: "🚀"
+    color: "#EC4899"
+    title: {en: "Pro Speed Tricks", zh: "高手加速祕技"}
+    tagline:
+      en: "The 2026 frontier: speculative decoding, FP8/NVFP4, parallelism, disaggregation, KV offload, RL."
+      zh: "2026 前沿：推測解碼、FP8/NVFP4、平行化、分離部署、KV offload、RL。"
+  - id: S5
+    emoji: "🏆"
+    color: "#EF4444"
+    title: {en: "Get Merged, Get Hired", zh: "上 PR、拿 Offer"}
+    tagline:
+      en: "Turn skill into proof: a real PR, an honest benchmark, an interview you can own."
+      zh: "把能力變成證明：一個真正的 PR、一份誠實的 benchmark、一場你掌握全局的面試。"
+  - id: S6
+    emoji: "🔮"
+    color: "#A855F7"
+    title: {en: "Frontier Watch", zh: "前沿觀測站"}
+    tagline:
+      en: "A living season refreshed monthly: what vLLM shipped this month, and what it means for your job."
+      zh: "每月更新的活季度：vLLM 這個月出了什麼，以及它對你的工作有什麼意義。"
+
+routes:
+  - id: curious
+    emoji: "🌱"
+    title: {en: "Curious", zh: "好奇寶寶"}
+    blurb:
+      en: "You use ChatGPT and want to know how it works under the hood."
+      zh: "你用過 ChatGPT，想知道它底下是怎麼運作的。"
+    path: [E01, E02, E03, E04, E05, E06, E07, E08, E09, E10, E17, E25]
+  - id: hired
+    emoji: "🎓"
+    title: {en: "Get hired", zh: "求職衝刺"}
+    blurb:
+      en: "Student or career switcher aiming at ML infra / inference roles. Weekly /mock included."
+      zh: "想進 ML infra／推論職位的學生或轉職者。每週一次 /mock。"
+    path: [E01, E02, E03, E04, E05, E06, E07, E08, E09, E10, E11, E12, E13, E17, E18, E19, E20, E21, E22, E27, E28, E24, E25, E26]
+  - id: contributor
+    emoji: "🛠️"
+    title: {en: "Contributor", zh: "貢獻者"}
+    blurb:
+      en: "You want your name in the vLLM commit log."
+      zh: "你想讓自己的名字出現在 vLLM 的 commit 紀錄裡。"
+    path: [E05, E06, E07, E08, E09, E10, E11, E12, E13, E14, E15, E16, E23, E24, E20, E21]
+  - id: serving
+    emoji: "⚡"
+    title: {en: "Serving engineer", zh: "服務工程師"}
+    blurb:
+      en: "You run models in production and want them faster and cheaper."
+      zh: "你在生產環境跑模型，想讓它更快、更便宜。"
+    path: [E05, E06, E07, E08, E09, E10, E11, E17, E18, E19, E20, E21, E27, E28, E24, E25]
+  - id: speedrun
+    emoji: "⏱️"
+    title: {en: "Interview Speedrun (7 days)", zh: "面試速通（7 天）"}
+    blurb:
+      en: "Interview in a week? The 10 episodes interviewers ask about most, plus a /mock every day."
+      zh: "一週後要面試？面試官最常問的 10 集，再加上每天一場 /mock。"
+    path: [E05, E07, E08, E09, E10, E17, E20, E27, E24, E25]
+
+ranks:
+  - {level: 1, xp: 0, name: {en: "Token Rookie", zh: "Token 新手"}, emoji: "🥚"}
+  - {level: 2, xp: 300, name: {en: "KV Cadet", zh: "KV 見習生"}, emoji: "🐣"}
+  - {level: 3, xp: 900, name: {en: "Page Master", zh: "分頁大師"}, emoji: "📄"}
+  - {level: 4, xp: 1800, name: {en: "Scheduler Sage", zh: "排程賢者"}, emoji: "🧙"}
+  - {level: 5, xp: 3200, name: {en: "Kernel Ninja", zh: "核心忍者"}, emoji: "🥷"}
+  - {level: 6, xp: 5000, name: {en: "Maintainer Material", zh: "準維護者"}, emoji: "👑"}
+
+badges:
+  - id: first_token
+    emoji: "🔤"
+    name: {en: "First Token", zh: "第一個 Token"}
+    how: {en: "Complete E01.", zh: "完成 E01。"}
+  - id: kv_accountant
+    emoji: "🧮"
+    name: {en: "KV Accountant", zh: "KV 會計師"}
+    how: {en: "Complete E07 and run /kvcalc.", zh: "完成 E07 並使用 /kvcalc。"}
+  - id: pager
+    emoji: "📄"
+    name: {en: "Pager", zh: "分頁手"}
+    how: {en: "Finish Season 1.", zh: "完成第一季。"}
+  - id: engine_builder
+    emoji: "⚙️"
+    name: {en: "Engine Builder", zh: "引擎打造者"}
+    how: {en: "Finish Season 2.", zh: "完成第二季。"}
+  - id: navigator
+    emoji: "🧭"
+    name: {en: "Navigator", zh: "領航員"}
+    how: {en: "Solve 5 codebase hunts.", zh: "解開 5 題原始碼尋寶。"}
+  - id: interview_ready
+    emoji: "🎤"
+    name: {en: "Interview Ready", zh: "面試準備就緒"}
+    how: {en: "Score 80%+ on a /mock interview.", zh: "在 /mock 模擬面試拿到 80% 以上。"}
+  - id: streak7
+    emoji: "🔥"
+    name: {en: "7-Day Streak", zh: "連續 7 天"}
+    how: {en: "Learn something 7 days in a row.", zh: "連續 7 天都有學習紀錄。"}
+  - id: quiz_whiz
+    emoji: "🧠"
+    name: {en: "Quiz Whiz", zh: "測驗高手"}
+    how: {en: "Answer 50 quiz questions correctly.", zh: "累積答對 50 題測驗。"}
+  - id: oracle
+    emoji: "🔮"
+    name: {en: "Oracle", zh: "先知"}
+    how: {en: "Vote on 5 hot takes in /hottake.", zh: "在 /hottake 對 5 個大膽預測投票。"}
+  - id: frontier
+    emoji: "🛰️"
+    name: {en: "Frontier Scout", zh: "前沿偵察兵"}
+    how: {en: "Finish Season 6 (Frontier Watch).", zh: "完成第六季（前沿觀測站）。"}
+  - id: merged
+    emoji: "🏅"
+    name: {en: "Merged", zh: "已合併"}
+    how: {en: "Get a PR merged upstream (granted by moderators).", zh: "有 PR 被上游 merge（由管理員頒發）。"}

@@ -1,0 +1,199 @@
+# Codebase treasure hunts. Answers are checked case-insensitively after stripping
+# backticks, quotes, spaces and a leading "./". Every answer was verified at the pinned commit in codemap.yaml.
+hunts:
+  - id: H1
+    xp: 40
+    difficulty: 1
+    q:
+      en: "Which file defines the V1 `Scheduler` class? (give the path from the repo root)"
+      zh: "V1 的 `Scheduler` 類別定義在哪個檔案？（給出從 repo 根目錄開始的路徑）"
+    hint:
+      en: "Try `grep -rn \"^class Scheduler\" vllm/v1`."
+      zh: "試試 `grep -rn \"^class Scheduler\" vllm/v1`。"
+    answers: ["vllm/v1/core/sched/scheduler.py"]
+    explain:
+      en: "`vllm/v1/core/sched/scheduler.py`, line 84. It's tensor-free, which is why it can be tested on CPU."
+      zh: "`vllm/v1/core/sched/scheduler.py` 第 84 行。它不含 tensor，所以可以在 CPU 上測試。"
+    code: scheduler
+  - id: H2
+    xp: 40
+    difficulty: 1
+    q:
+      en: "Inside `Scheduler.schedule()`, what's the name of the local variable that tracks how many tokens can still be scheduled this step?"
+      zh: "在 `Scheduler.schedule()` 裡，追蹤這一步還能排多少 token 的區域變數叫什麼？"
+    hint:
+      en: "It's initialized from `self.max_num_scheduled_tokens`."
+      zh: "它的初始值來自 `self.max_num_scheduled_tokens`。"
+    answers: ["token_budget"]
+    explain:
+      en: "`token_budget` (line 611). Every scheduled token is subtracted from it."
+      zh: "`token_budget`（第 611 行）。每排一個 token 就從它扣掉。"
+    code: scheduler
+  - id: H3
+    xp: 40
+    difficulty: 1
+    q:
+      en: "Which `KVCacheManager` method allocates blocks for a request's new tokens?"
+      zh: "`KVCacheManager` 的哪個方法替請求的新 token 配置 block？"
+    hint:
+      en: "Look in `vllm/v1/core/kv_cache_manager.py` for a method starting with `allocate`."
+      zh: "在 `vllm/v1/core/kv_cache_manager.py` 找以 `allocate` 開頭的方法。"
+    answers: ["allocate_slots", "kvcachemanager.allocate_slots"]
+    explain:
+      en: "`allocate_slots` (line 371). It returns None when there isn't enough memory, and the scheduler then preempts."
+      zh: "`allocate_slots`（第 371 行）。記憶體不夠時回傳 None，排程器接著就會搶占。"
+    code: kv_cache_manager
+  - id: H4
+    xp: 40
+    difficulty: 2
+    q:
+      en: "Which function computes the hash of one block of tokens for prefix caching?"
+      zh: "哪個函式計算 prefix caching 中一個 block 的 token hash？"
+    hint:
+      en: "It lives in `vllm/v1/core/kv_cache_utils.py`."
+      zh: "它在 `vllm/v1/core/kv_cache_utils.py` 裡。"
+    answers: ["hash_block_tokens"]
+    explain:
+      en: "`hash_block_tokens` (line 695) combines the parent hash, the block's token IDs and extra keys."
+      zh: "`hash_block_tokens`（第 695 行）結合上一個 block 的 hash、這個 block 的 token ID 與額外的 key。"
+    code: prefix_hash
+  - id: H5
+    xp: 40
+    difficulty: 2
+    q:
+      en: "What's the name of the class that keeps free KV blocks in LRU eviction order as a hand-written doubly linked list?"
+      zh: "以手寫雙向鏈結串列、依 LRU 淘汰順序保存空閒 KV block 的類別叫什麼？"
+    hint:
+      en: "Same file as H4. Its docstring explains why it isn't a `deque`."
+      zh: "和 H4 同一個檔案。它的 docstring 解釋了為什麼不用 `deque`。"
+    answers: ["FreeKVCacheBlockQueue"]
+    explain:
+      en: "`FreeKVCacheBlockQueue` (line 246) supports O(1) removal from the middle when a cached block is hit again."
+      zh: "`FreeKVCacheBlockQueue`（第 246 行）支援在快取 block 再次被命中時，O(1) 從中間移除。"
+    code: free_queue
+  - id: H6
+    xp: 40
+    difficulty: 1
+    q:
+      en: "At the pinned commit, what is the default value of `gpu_memory_utilization`?"
+      zh: "在固定的 commit 中，`gpu_memory_utilization` 的預設值是多少？"
+    hint:
+      en: "Look in `vllm/config/cache.py`. (It's not 0.9 anymore.)"
+      zh: "看 `vllm/config/cache.py`。（已經不是 0.9 了。）"
+    answers: ["0.92"]
+    explain:
+      en: "0.92. Defaults change between versions, so always check the source or `--help` for your version."
+      zh: "0.92。預設值會隨版本改變，所以一定要查你那個版本的原始碼或 `--help`。"
+    code: kv_cache_manager
+  - id: H7
+    xp: 40
+    difficulty: 1
+    q:
+      en: "Is automatic prefix caching enabled by default at the pinned commit? (true/false)"
+      zh: "在固定的 commit 中，automatic prefix caching 預設有開啟嗎？（true/false）"
+    hint:
+      en: "Search `enable_prefix_caching` in `vllm/config/cache.py`."
+      zh: "在 `vllm/config/cache.py` 搜尋 `enable_prefix_caching`。"
+    answers: ["true", "yes", "on", "是", "有"]
+    explain:
+      en: "True. To compare against a no-cache baseline, pass `--no-enable-prefix-caching`."
+      zh: "True。要和沒有快取的基準比較時，加上 `--no-enable-prefix-caching`。"
+    code: block_pool
+  - id: H8
+    xp: 40
+    difficulty: 2
+    q:
+      en: "Which file contains `get_attn_backend`, the function that picks the attention backend?"
+      zh: "選擇 attention backend 的函式 `get_attn_backend` 在哪個檔案？"
+    hint:
+      en: "It's under `vllm/v1/attention/`."
+      zh: "在 `vllm/v1/attention/` 底下。"
+    answers: ["vllm/v1/attention/selector.py"]
+    explain:
+      en: "`vllm/v1/attention/selector.py`, line 105."
+      zh: "`vllm/v1/attention/selector.py` 第 105 行。"
+    code: attention_selector
+  - id: H9
+    xp: 40
+    difficulty: 2
+    q:
+      en: "Which `Scheduler` method processes the model's outputs after each step (records new tokens and checks stop conditions)?"
+      zh: "`Scheduler` 的哪個方法在每一步之後處理模型輸出（記錄新 token、檢查停止條件）？"
+    hint:
+      en: "It's called by `EngineCore.step()` right after execution."
+      zh: "它在執行完之後，由 `EngineCore.step()` 呼叫。"
+    answers: ["update_from_output", "scheduler.update_from_output"]
+    explain:
+      en: "`update_from_output` (line 2036)."
+      zh: "`update_from_output`（第 2036 行）。"
+    code: scheduler
+  - id: H10
+    xp: 40
+    difficulty: 2
+    q:
+      en: "Which file implements the EAGLE speculative-decoding proposer?"
+      zh: "哪個檔案實作了 EAGLE 推測解碼的提議者？"
+    hint:
+      en: "Look in `vllm/v1/spec_decode/`."
+      zh: "看 `vllm/v1/spec_decode/`。"
+    answers: ["vllm/v1/spec_decode/eagle.py"]
+    explain:
+      en: "`vllm/v1/spec_decode/eagle.py` defines `EagleProposer`. Its neighbors include ngram, suffix decoding, draft-model, Medusa and DFlash proposers."
+      zh: "`vllm/v1/spec_decode/eagle.py` 定義了 `EagleProposer`。旁邊還有 ngram、suffix decoding、draft model、Medusa 與 DFlash 等提議者。"
+    code: spec_decode
+  - id: H11
+    xp: 50
+    difficulty: 2
+    q:
+      en: "In the model registry, which **module** serves the architecture `DeepseekV3ForCausalLM`? (one word)"
+      zh: "在模型註冊表中，架構 `DeepseekV3ForCausalLM` 由哪個**模組**負責？（一個詞）"
+    hint:
+      en: "`grep -n DeepseekV3ForCausalLM vllm/model_executor/models/registry.py`. The answer may surprise you."
+      zh: "`grep -n DeepseekV3ForCausalLM vllm/model_executor/models/registry.py`。答案可能會讓你意外。"
+    answers: ["deepseek_v2", "deepseek_v2.py"]
+    explain:
+      en: "`deepseek_v2`. V3 reuses the V2 implementation (MLA + MoE) with config differences. Registry entries are (module, class) pairs."
+      zh: "`deepseek_v2`。V3 重複使用 V2 的實作（MLA + MoE），差在設定。註冊表的每一項都是（模組, 類別）。"
+    code: model_registry
+  - id: H12
+    xp: 50
+    difficulty: 3
+    q:
+      en: "What base class must a V1 KV connector subclass?"
+      zh: "V1 的 KV connector 必須繼承哪個基底類別？"
+    hint:
+      en: "Look in `vllm/distributed/kv_transfer/kv_connector/v1/base.py`."
+      zh: "看 `vllm/distributed/kv_transfer/kv_connector/v1/base.py`。"
+    answers: ["KVConnectorBase_V1"]
+    explain:
+      en: "`KVConnectorBase_V1` (line 180). It has scheduler-side and worker-side methods."
+      zh: "`KVConnectorBase_V1`（第 180 行）。它有排程器端與 worker 端的方法。"
+    code: kv_connector
+  - id: H13
+    xp: 50
+    difficulty: 3
+    q:
+      en: "Which directory holds the experimental Model Runner V2? (path from repo root)"
+      zh: "實驗中的 Model Runner V2 放在哪個資料夾？（從 repo 根目錄開始的路徑）"
+    hint:
+      en: "It's a sibling of `gpu_model_runner.py` and has its own README."
+      zh: "它和 `gpu_model_runner.py` 在同一層，而且有自己的 README。"
+    answers: ["vllm/v1/worker/gpu", "vllm/v1/worker/gpu/"]
+    explain:
+      en: "`vllm/v1/worker/gpu/`, with its `GPUModelRunner` in `model_runner.py`."
+      zh: "`vllm/v1/worker/gpu/`，它的 `GPUModelRunner` 在 `model_runner.py`。"
+    code: model_runner_v2
+  - id: H14
+    xp: 60
+    difficulty: 3
+    q:
+      en: "When KV allocation fails under FCFS scheduling, which running request gets preempted: the FIRST or the LAST in `self.running`?"
+      zh: "在 FCFS 排程下 KV 配置失敗時，被搶占的是 `self.running` 裡的「第一個」還是「最後一個」請求？"
+    hint:
+      en: "Read the code around `preempted_req` in `schedule()`."
+      zh: "讀 `schedule()` 裡 `preempted_req` 附近的程式碼。"
+    answers: ["last", "the last", "最後一個", "最後", "self.running.pop()", "running.pop()"]
+    explain:
+      en: "The last one (`self.running.pop()`), the most recently admitted request. Under the priority policy it's the lowest-priority request instead."
+      zh: "最後一個（`self.running.pop()`），也就是最晚進場的請求。如果是 priority 策略，則改成優先權最低的請求。"
+    code: scheduler

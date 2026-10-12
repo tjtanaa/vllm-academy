@@ -1,0 +1,197 @@
+episodes:
+  - id: E05
+    season: S1
+    minutes: 20
+    title:
+      en: "Your GPU is >90% idle while it talks to you"
+      zh: "GPU 跟你聊天時，有超過 90% 的時間在發呆"
+    hook:
+      en: "When an H100 writes your reply one token at a time, its compute units are mostly waiting. Decode is a memory-bandwidth problem wearing a compute costume."
+      zh: "當 H100 一個 token 一個 token 寫你的回覆時，它的運算單元大部分時間都在等。Decode 是一個披著運算外衣的記憶體頻寬問題。"
+    aha:
+      en: |-
+        To produce **one** token, the GPU must stream **every weight** from memory (HBM) into the cores, yet it does only about 2 FLOPs per weight (one multiply-add).
+
+        That's ~1 FLOP per byte (bf16). An H100 can do ~990 TFLOP/s dense BF16 but only move ~3.35 TB/s, so it needs ~300 FLOPs per byte to stay busy. At batch size 1 you use well under 1% of the compute.
+
+        Napkin math: 8B params × 2 bytes = 16 GB per step ÷ 3.35 TB/s ≈ 5 ms → about 200 tokens/s, max, for one user.
+
+        **The fix is batching.** Serve 64 users in the same step and every weight byte you load does 64× the work. That one idea is why serving engines exist.
+      zh: |-
+        要產生**一個** token，GPU 必須把**所有權重**從記憶體（HBM）搬進運算核心，但每個權重只做大約 2 個 FLOP（一次乘加）。
+
+        這大約是每個 byte 1 個 FLOP（bf16）。H100 的 BF16 dense 算力約 990 TFLOP/s，但記憶體頻寬只有約 3.35 TB/s，所以每個 byte 要做約 300 個 FLOP 才能讓它忙起來。Batch size 1 時，你用到的算力遠低於 1%。
+
+        餐巾紙計算：8B 參數 × 2 bytes = 每步 16 GB ÷ 3.35 TB/s ≈ 5 ms → 單一使用者最多約每秒 200 個 token。
+
+        **解法是批次處理（batching）。** 同一步服務 64 個使用者，每搬一個 byte 的權重就能做 64 倍的工作。這一個觀念，就是推論引擎存在的理由。
+    tldr:
+      en:
+        - "Decode reads all weights per step but does ~2 FLOPs per weight: memory-bound."
+        - "Time per decode step ≈ bytes moved ÷ memory bandwidth."
+        - "Batching many users per step raises arithmetic intensity and throughput."
+      zh:
+        - "Decode 每步都要讀完所有權重，但每個權重只做約 2 FLOP：受限於記憶體。"
+        - "每個 decode 步驟的時間 ≈ 搬動的 bytes ÷ 記憶體頻寬。"
+        - "每一步同時處理多個使用者，可以提高算術強度與吞吐量。"
+    pro:
+      en: "Prefill is compute-bound because many prompt tokens share each weight load. Decode processes one new token per sequence, so arithmetic intensity is roughly the batch size, far below the GPU's FLOPs-to-bandwidth ratio. Decode latency is therefore bounded by bytes moved (weights plus KV) over HBM bandwidth. Batching, quantization and speculative decoding all attack that ratio."
+      zh: "Prefill 受限於算力，因為很多 prompt token 共用同一次權重讀取。Decode 每個序列只處理一個新 token，算術強度大約等於 batch size，遠低於 GPU 的算力／頻寬比。所以 decode 延遲的下限是「搬動的 bytes（權重 + KV）÷ HBM 頻寬」。Batching、量化與推測解碼，都是在改善這個比例。"
+    followup:
+      en: "At what batch size does decode stop being memory-bound, and what else grows with batch size?"
+      zh: "Batch size 到多大時 decode 就不再受限於記憶體？還有什麼東西會跟著 batch size 一起變大？"
+    lab: Q3
+    lab_hint:
+      en: "`python academy/labs/batching_arena.py --roofline` prints tokens/s vs batch size for an 8B model."
+      zh: "`python academy/labs/batching_arena.py --roofline` 會印出 8B 模型在不同 batch size 下的每秒 token 數。"
+    deep_dive: course/part1/03-hardware.md
+    code: [model_runner]
+  - id: E06
+    season: S1
+    minutes: 20
+    title:
+      en: "The KV cache: the cheat code every LLM uses"
+      zh: "KV cache：每個 LLM 都在用的作弊碼"
+    hook:
+      en: "Without it, writing token 1,000 would redo all the work of tokens 1–999. With it, you pay in memory instead. That trade defines modern inference."
+      zh: "沒有它，生成第 1,000 個 token 時要把第 1 到 999 個 token 的工作全部重做。有了它，改用記憶體付帳。這個取捨定義了現代的推論。"
+    aha:
+      en: |-
+        In attention, a new token's query looks at the **keys and values of every earlier token**. Because of the causal mask, those earlier K/V never change.
+
+        So compute them once and keep them: that's the **KV cache**. Each decode step now runs only the new token through the layers and reads the stored K/V.
+
+        Cost: memory that grows with every token, every layer, every user:
+
+        `bytes/token = 2 (K and V) × layers × kv_heads × head_dim × bytes_per_value`
+
+        Watch the off-by-one: after prefilling `[11, 22, 33]` the cache holds 3 positions. The sampled token `44` is *not* in the cache until the next forward processes it.
+      zh: |-
+        在 attention 裡，新 token 的 query 要看**之前每一個 token 的 key 與 value**。因為有因果遮罩，這些舊的 K/V 永遠不會變。
+
+        那就算一次、存起來：這就是 **KV cache**。之後每個 decode 步驟只讓新 token 跑過各層，再讀取存好的 K/V。
+
+        代價：記憶體會隨著每個 token、每一層、每個使用者一起長大：
+
+        `每個 token 的 bytes = 2（K 和 V）× 層數 × kv_heads × head_dim × 每個數值的 bytes`
+
+        小心差一錯誤：prefill `[11, 22, 33]` 之後，cache 裡有 3 個位置。抽樣出來的 `44` 要等下一次 forward 處理它之後，才會進 cache。
+    tldr:
+      en:
+        - "Cache K and V of past tokens; each decode step only computes the new token."
+        - "KV memory grows linearly with tokens × layers × KV heads × head_dim."
+        - "'Computed' and 'sampled' are different counters: don't mix them up."
+      zh:
+        - "把過去 token 的 K 和 V 存起來；每個 decode 步驟只算新 token。"
+        - "KV 記憶體隨 token 數 × 層數 × KV heads × head_dim 線性成長。"
+        - "「已計算」和「已抽樣」是兩個不同的計數器，不要搞混。"
+    pro:
+      en: "The KV cache stores per-layer key and value tensors for all processed tokens, so each decode step only projects the new token and attends over cached K/V. It removes redundant recomputation of the prefix but makes memory the binding constraint: KV size grows linearly with sequence length and concurrent sequences, which is what limits batch size in practice."
+      zh: "KV cache 儲存所有已處理 token 在每一層的 key 與 value，讓每個 decode 步驟只需要投影新 token，再對快取的 K/V 做 attention。它省掉了重複計算前綴的工作，但讓記憶體變成主要限制：KV 大小隨序列長度與同時處理的序列數線性成長，實務上 batch size 就是被它卡住的。"
+    followup:
+      en: "Does the KV cache make attention over a long history free? What still grows per step?"
+      zh: "KV cache 會讓長歷史的 attention 變成免費嗎？每一步還有什麼會繼續變大？"
+    lab: null
+    lab_hint:
+      en: "`cd phase1/redesign && python -m pytest -q tests/test_mechanisms.py -k 'cached or greedy'`: cached and uncached logits must match."
+      zh: "`cd phase1/redesign && python -m pytest -q tests/test_mechanisms.py -k 'cached or greedy'`：有快取與無快取的 logits 必須一致。"
+    deep_dive: phase1/redesign/lessons/06-kv-cache.md
+    code: [kv_cache_manager]
+  - id: E07
+    season: S1
+    minutes: 15
+    title:
+      en: "The interview question that sinks most candidates"
+      zh: "讓多數面試者陣亡的那一題"
+    hook:
+      en: "\"How much GPU memory does one 128k-token Llama-3.1-70B request need for its KV cache?\" Most people are off by 8× or forget half the formula. You won't be."
+      zh: "「一個 128k token 的 Llama-3.1-70B 請求，KV cache 需要多少 GPU 記憶體？」大多數人會差 8 倍，或是漏掉一半的公式。你不會。"
+    aha:
+      en: |-
+        Llama-3.1-70B: **80 layers**, **8 KV heads** (GQA; it has 64 *query* heads), **head_dim 128**, bf16 = **2 bytes**.
+
+        `2 × 80 × 8 × 128 × 2 = 327,680 bytes ≈ 320 KiB per token`
+
+        × 131,072 tokens = **40 GiB for one request.**
+
+        Weights are another ~140 GB. On 4× 80 GB GPUs that leaves room for only three or four full-length requests at once.
+
+        Classic mistakes: using 64 query heads (8× too big), forgetting the ×2 for K *and* V, forgetting layers. Bonus points: GQA shrinks KV 8× vs MHA; FP8 KV halves it again; MLA (DeepSeek) stores one compressed latent instead of per-head K/V.
+      zh: |-
+        Llama-3.1-70B：**80 層**、**8 個 KV heads**（GQA；它有 64 個 *query* heads）、**head_dim 128**、bf16 = **2 bytes**。
+
+        `2 × 80 × 8 × 128 × 2 = 327,680 bytes ≈ 每個 token 320 KiB`
+
+        × 131,072 個 token = **單一請求 40 GiB。**
+
+        權重還要再吃大約 140 GB。用 4 張 80 GB 的 GPU，同時只放得下三到四個滿長度的請求。
+
+        經典錯誤：用 64 個 query heads 算（大 8 倍）、忘了 K *和* V 要 ×2、忘了乘層數。加分題：GQA 讓 KV 比 MHA 小 8 倍；FP8 KV 再砍一半；MLA（DeepSeek）只存一個壓縮過的 latent，而不是每個 head 的 K/V。
+    tldr:
+      en:
+        - "KV bytes/token = 2 × layers × KV heads × head_dim × bytes. Use KV heads, not query heads."
+        - "Llama-3.1-70B bf16: 320 KiB/token → 40 GiB per 128k request."
+        - "GQA, FP8 KV and MLA are the three big levers on KV size."
+      zh:
+        - "每個 token 的 KV bytes = 2 × 層數 × KV heads × head_dim × bytes。用 KV heads，不是 query heads。"
+        - "Llama-3.1-70B bf16：每 token 320 KiB → 每個 128k 請求 40 GiB。"
+        - "GQA、FP8 KV、MLA 是縮小 KV 的三大槓桿。"
+    pro:
+      en: "Per-token KV = 2 × layers × KV heads × head_dim × dtype bytes. For Llama-3.1-70B that's 2×80×8×128×2 = 320 KiB, so a 128k context is 40 GiB. With ~140 GB of bf16 weights on 4×80 GB, the remaining ~150 GB holds only three or four full-length sequences. That's why long-context serving leans on GQA/MLA, FP8 KV cache, prefix sharing and KV offloading."
+      zh: "每個 token 的 KV = 2 × 層數 × KV heads × head_dim × dtype bytes。Llama-3.1-70B 是 2×80×8×128×2 = 320 KiB，所以 128k context 是 40 GiB。4×80 GB 扣掉約 140 GB 的 bf16 權重，剩下約 150 GB 只放得下三到四個滿長度序列。這就是為什麼長 context 服務仰賴 GQA/MLA、FP8 KV cache、前綴共享與 KV offload。"
+    followup:
+      en: "Now the model is served with tensor parallelism 4. How much KV does each GPU hold per token?"
+      zh: "現在模型用 tensor parallelism 4 來服務。每張 GPU 每個 token 要存多少 KV？"
+    lab: Q4
+    lab_hint:
+      en: "`python academy/labs/kv_budget.py --model llama-3.1-70b --context 131072 --gpus 4 --gpu-mem 80`, or just type `/kvcalc` in Discord."
+      zh: "`python academy/labs/kv_budget.py --model llama-3.1-70b --context 131072 --gpus 4 --gpu-mem 80`，或直接在 Discord 輸入 `/kvcalc`。"
+    deep_dive: course/part1/04-kv-memory.md
+    code: [kv_cache_manager, block_pool]
+  - id: E08
+    season: S1
+    minutes: 25
+    title:
+      en: "PagedAttention: the 1960s OS trick behind vLLM's 24× speedup"
+      zh: "PagedAttention：讓 vLLM 快 24 倍的 1960 年代作業系統老招"
+    hook:
+      en: "Before vLLM, serving systems wasted 60–80% of KV-cache memory. The fix was invented for operating systems decades ago: virtual memory with pages."
+      zh: "在 vLLM 之前，推論系統浪費了 60–80% 的 KV cache 記憶體。解法早在幾十年前就被作業系統發明了：分頁式虛擬記憶體。"
+    aha:
+      en: |-
+        Old servers reserved one big **contiguous** KV slab per request, sized for the *maximum* length. Most of it sat empty: internal fragmentation, over-reservation, external fragmentation.
+
+        **PagedAttention** splits KV into fixed-size **blocks** (pages), for example 16 tokens each. A per-request **block table** maps logical block 0, 1, 2… to *any* free physical block, like an OS page table. Blocks are allocated only when needed, so the waste is at most one partly filled block per request.
+
+        Bonus: two requests can point at the **same** physical block (shared prompt, parallel sampling) with reference counts.
+
+        The 2023 paper reported under 4% waste, and the launch blog measured up to 24× higher throughput than HuggingFace Transformers.
+      zh: |-
+        舊的推論伺服器替每個請求預留一大塊**連續**的 KV 空間，大小以*最大*長度計算。大部分都是空的：內部碎片、過度預留、外部碎片。
+
+        **PagedAttention** 把 KV 切成固定大小的 **block**（分頁），例如每塊 16 個 token。每個請求有一張 **block table**，把邏輯 block 0、1、2… 對應到*任何*空閒的實體 block，就像作業系統的分頁表。Block 需要時才配置，所以每個請求最多只浪費一個沒填滿的 block。
+
+        額外好處：兩個請求可以指向**同一個**實體 block（共用的 prompt、平行抽樣），用參照計數管理。
+
+        2023 年的論文回報浪費低於 4%，發表時的部落格量測到比 HuggingFace Transformers 高出最多 24 倍的吞吐量。
+    tldr:
+      en:
+        - "KV is stored in fixed-size blocks; a block table maps logical → physical, like OS paging."
+        - "Allocate on demand: waste is at most one partially filled block per request."
+        - "Ref-counted blocks enable sharing for prefixes and parallel sampling."
+      zh:
+        - "KV 存在固定大小的 block 裡；block table 把邏輯位置對應到實體位置，就像 OS 分頁。"
+        - "需要時才配置：每個請求最多浪費一個沒填滿的 block。"
+        - "有參照計數的 block，讓前綴與平行抽樣可以共享記憶體。"
+    pro:
+      en: "PagedAttention stores each sequence's KV cache in fixed-size, non-contiguous blocks addressed through a per-sequence block table, analogous to virtual-memory paging. This removes fragmentation and over-reservation, so far more sequences fit in memory and batch size goes up. Attention kernels gather K/V through the block table. Ref-counted blocks allow prefix sharing and copy-on-write."
+      zh: "PagedAttention 把每個序列的 KV cache 存在固定大小、不需連續的 block 裡，透過每個序列的 block table 定址，就像虛擬記憶體的分頁。這消除了碎片與過度預留，記憶體能放進更多序列，batch size 就上去了。Attention kernel 透過 block table 收集 K/V。有參照計數的 block 讓前綴共享與 copy-on-write 成為可能。"
+    followup:
+      en: "What's the trade-off in choosing block size 16 vs 128?"
+      zh: "Block size 選 16 或 128，各有什麼取捨？"
+    lab: Q2
+    lab_hint:
+      en: "`python academy/labs/paged_playground.py` shows blocks being allocated, shared and freed in color."
+      zh: "`python academy/labs/paged_playground.py` 會用彩色畫面顯示 block 的配置、共享與釋放。"
+    deep_dive: phase1/redesign/lessons/08-pages-prefix.md
+    code: [block_pool, kv_cache_manager]

@@ -1,0 +1,198 @@
+# Trend cards. Written October 2026 — refresh monthly. Every card cites a source.
+as_of: "2026-10-12"
+trends:
+  - id: t-inferact
+    emoji: "💰"
+    title:
+      en: "vLLM's creators raised $150M to commercialize it"
+      zh: "vLLM 的創作者募資 1.5 億美元，將它商業化"
+    body:
+      en: "Inferact, founded by vLLM's creators, launched in January 2026 with a $150M seed round co-led by Andreessen Horowitz and Lightspeed at an $800M valuation. vLLM stays open source; the company builds commercial cross-hardware inference on top. For learners, the vLLM skill set is now backed by a funded company plus every cloud and hardware vendor."
+      zh: "由 vLLM 創作者創立的 Inferact 在 2026 年 1 月成立，獲得由 Andreessen Horowitz 與 Lightspeed 共同領投的 1.5 億美元種子輪，估值 8 億美元。vLLM 仍然開源；公司在其上打造跨硬體的商業推論產品。對學習者來說，vLLM 技能背後現在有一家有資金的公司，再加上所有雲端與硬體廠商。"
+    why:
+      en: "Open-source inference is a career path, not a hobby."
+      zh: "開源推論是一條職涯路線，不只是興趣。"
+    episode: E26
+    source: "https://techcrunch.com/2026/01/22/inference-startup-inferact-lands-150m-to-commercialize-vllm/"
+  - id: t-v031
+    emoji: "📦"
+    title:
+      en: "v0.31.0: fast restarts, CRIU snapshots, MoonEP"
+      zh: "v0.31.0：快速重啟、CRIU 快照、MoonEP"
+    body:
+      en: "Released 5 Oct 2026. Highlights: a `vllm preload` weight-cache daemon that keeps weights in GPU memory across restarts, experimental CRIU engine snapshots, draft-model spec decode on Model Runner V2, a MoonEP all-to-all backend, an NCCL weight-transfer backend for RL, and a `--max-num-active-seqs` cap."
+      zh: "2026 年 10 月 5 日發布。重點：`vllm preload` 權重快取常駐程式，讓權重在重啟之間留在 GPU 記憶體；實驗性的 CRIU 引擎快照；Model Runner V2 上的草稿模型推測解碼；MoonEP all-to-all backend；給 RL 用的 NCCL 權重傳輸 backend；以及 `--max-num-active-seqs` 上限。"
+    why:
+      en: "Startup time and elasticity are the new performance frontier."
+      zh: "啟動時間與彈性是新的效能前線。"
+    episode: E15
+    source: "https://github.com/vllm-project/vllm/releases"
+  - id: t-v030
+    emoji: "📦"
+    title:
+      en: "v0.30.0: HiSparse, Fast Start, watermarking"
+      zh: "v0.30.0：HiSparse、Fast Start、浮水印"
+    body:
+      en: "Released 22 Sep 2026: a host-memory tier for sparse-MLA decode (HiSparse), a per-GPU weight-cache daemon for fast engine restarts, Gumbel-max watermarking, and Model Runner V2 dual-batch overlap with MTP/EAGLE3 under pipeline parallelism."
+      zh: "2026 年 9 月 22 日發布：給稀疏 MLA decode 用的主機記憶體層（HiSparse）、加速引擎重啟的每 GPU 權重快取常駐程式、Gumbel-max 浮水印，以及 Model Runner V2 在 pipeline parallel 下支援 dual-batch overlap 與 MTP/EAGLE3。"
+    why:
+      en: "KV memory tiers and runner rewrites are where the engine is evolving."
+      zh: "KV 記憶體分層與 runner 重寫，是引擎演進的重點。"
+    episode: E21
+    source: "https://github.com/vllm-project/vllm/releases"
+  - id: t-disagg
+    emoji: "✂️"
+    title:
+      en: "Disaggregated serving goes mainstream"
+      zh: "分離部署成為主流"
+    body:
+      en: "vLLM's 29 Sep 2026 guide walks through splitting prefill and decode across workers, including a new GPU-less frontend. Days earlier, the team showed P/D serving of a 2.4-trillion-parameter model on GB300 NVL72."
+      zh: "vLLM 在 2026 年 9 月 29 日發表的指南，完整說明如何把 prefill 與 decode 拆到不同 worker，包含新的無 GPU 前端。幾天前，團隊才展示了在 GB300 NVL72 上以 P/D 分離方式服務 2.4 兆參數模型。"
+    why:
+      en: "E20 is no longer 'big-lab only' knowledge."
+      zh: "E20 不再只是「大型實驗室才需要」的知識。"
+    episode: E20
+    source: "https://vllm.ai/blog/2026-09-29-disaggregated-serving-guide"
+  - id: t-kvoffload
+    emoji: "🗄️"
+    title:
+      en: "Tiered KV offloading: HBM → DRAM → SSD → remote"
+      zh: "分層 KV offload：HBM → DRAM → SSD → 遠端"
+    body:
+      en: "vLLM now extends KV capacity beyond GPU memory into host memory, file systems, object stores and remote peers (blog, 10 Sep 2026). Agentic and multi-turn workloads, with long contexts that come back later, are the driver."
+      zh: "vLLM 現在可以把 KV 容量延伸到 GPU 記憶體之外：主機記憶體、檔案系統、物件儲存與遠端節點（部落格，2026 年 9 月 10 日）。推動力是 agent 與多輪對話這類 context 很長、之後還會回來用的工作負載。"
+    why:
+      en: "Memory hierarchy design is a hot skill for infra engineers."
+      zh: "記憶體階層設計是 infra 工程師的熱門技能。"
+    episode: E21
+    source: "https://vllm.ai/blog/2026-09-10-tiered-kv-offloading"
+  - id: t-agentic
+    emoji: "🤖"
+    title:
+      en: "Agents are the new benchmark"
+      zh: "Agent 成為新的 benchmark"
+    body:
+      en: "Recent vLLM posts measure 'agentic throughput': DeepSeek-V4.1-Flash got 5× faster since day 0 (7 Oct 2026), and the vLLM x AgentX work optimized KV cache, parallelism, scheduling and disaggregation for real agent traffic."
+      zh: "vLLM 最近的文章開始量測「agent 吞吐量」：DeepSeek-V4.1-Flash 從首日支援到現在快了 5 倍（2026 年 10 月 7 日），vLLM x AgentX 也針對真實 agent 流量最佳化了 KV cache、平行化、排程與分離部署。"
+    why:
+      en: "Long, branching, tool-calling contexts change what 'fast' means."
+      zh: "長、會分支、會呼叫工具的 context，改變了「快」的定義。"
+    episode: E10
+    source: "https://vllm.ai/blog/2026-10-07-deepseek-v41-flash"
+  - id: t-hardware
+    emoji: "🧩"
+    title:
+      en: "One engine, every chip"
+      zh: "一個引擎，所有晶片"
+    body:
+      en: "In six weeks: Vera Rubin NVL72 support with 7.8× over GB200 NVL72 (9 Oct), MiniMax M3 on AMD MI355X, vllm-metal for Apple Silicon, and a Tenstorrent out-of-tree plugin. Hardware enablement is one of the biggest hiring areas around vLLM."
+      zh: "短短六週內：支援 Vera Rubin NVL72，比 GB200 NVL72 快 7.8 倍（10 月 9 日）、在 AMD MI355X 上最佳化 MiniMax M3、推出 Apple Silicon 用的 vllm-metal，以及 Tenstorrent 的 out-of-tree 外掛。硬體支援是 vLLM 周邊最大的徵才領域之一。"
+    why:
+      en: "Taiwan's hardware ecosystem plus vLLM skills is a strong combination."
+      zh: "台灣的硬體生態系 + vLLM 技能，是很強的組合。"
+    episode: E15
+    source: "https://vllm.ai/blog/2026-10-09-vera-rubin-preview"
+  - id: t-rl
+    emoji: "🎯"
+    title:
+      en: "RL post-training runs on inference engines"
+      zh: "RL 後訓練跑在推論引擎上"
+    body:
+      en: "Kimi K2 BF16 weights were moved across 48 nodes in 7.53 s with Ray Direct Transport, and teams are chasing bitwise train–rollout consistency (SkyRL IsoExec; RL on ROCm MI300X). vLLM now ships native weight-transfer backends and RL control endpoints."
+      zh: "用 Ray Direct Transport 在 7.53 秒內把 Kimi K2 的 BF16 權重傳到 48 個節點；各團隊也在追求訓練與 rollout 的逐位元一致（SkyRL IsoExec；在 ROCm MI300X 上做 RL）。vLLM 現在內建權重傳輸 backend 與 RL 控制端點。"
+    why:
+      en: "Inference engineers are now part of every reasoning-model training team."
+      zh: "推論工程師現在是每個推理模型訓練團隊的一員。"
+    episode: E22
+    source: "https://vllm.ai/blog/2026-08-22-rdt-weight-transfer"
+  - id: t-specdec
+    emoji: "🔮"
+    title:
+      en: "The speculative-decoding zoo keeps growing"
+      zh: "推測解碼動物園持續擴大"
+    body:
+      en: "DFlash with async scheduling, MTP and EAGLE3 under pipeline parallelism, draft models on Model Runner V2, and trained draft models like DSpark for Kimi K3. Picking and tuning a drafter for a workload is now a real job skill."
+      zh: "搭配非同步排程的 DFlash、在 pipeline parallel 下的 MTP 與 EAGLE3、Model Runner V2 上的草稿模型，以及像 Kimi K3 的 DSpark 這類專門訓練的草稿模型。為特定工作負載挑選與調校 drafter，已經是真正的職場技能。"
+    why:
+      en: "E17 shows up in interviews and in production tuning."
+      zh: "E17 會出現在面試題，也會出現在生產環境調校中。"
+    episode: E17
+    source: "https://vllm.ai/blog/2026-09-15-kimi-k3-dspark"
+  - id: t-rust
+    emoji: "🦀"
+    title:
+      en: "A Rust frontend lands in the vLLM repo"
+      zh: "Rust 前端進駐 vLLM repo"
+    body:
+      en: "`rust/` now holds an experimental drop-in Rust frontend (axum HTTP server, chat rendering, tokenizer and detokenizer) that talks to the Python engine core over the same ZMQ boundary. It was moved into the main repo from Inferact's vllm-frontend-rs."
+      zh: "`rust/` 現在放著一個實驗性、可直接替換的 Rust 前端（axum HTTP 伺服器、對話渲染、tokenizer 與 detokenizer），透過同一條 ZMQ 邊界和 Python engine core 溝通。它是從 Inferact 的 vllm-frontend-rs 搬進主 repo 的。"
+    why:
+      en: "The API/engine process split from E13 is what makes this possible. Rust contributors are welcome too."
+      zh: "E13 講的 API/引擎行程分離，正是讓這件事成為可能的原因。也歡迎 Rust 貢獻者。"
+    episode: E13
+    source: "https://github.com/vllm-project/vllm/tree/74f4404f58c0fb16821b34c16343486eeaf164a5/rust"
+  - id: t-quant
+    emoji: "🪶"
+    title:
+      en: "FP4 everywhere: NVFP4 KV caches and INT4 MoE kernels"
+      zh: "FP4 遍地開花：NVFP4 KV cache 與 INT4 MoE kernel"
+    body:
+      en: "v0.31 made an NVFP4 compressed KV cache the SM100 default for DeepSeek-V4.1-Flash, v0.30 added NVFP4 in the torch linear backend and AutoRound 2–7-bit, and Novita's open-source 'Chord' W4A16 MoE kernel sped up Kimi K2.x by up to 2.15× on untuned B300."
+      zh: "v0.31 讓 NVFP4 壓縮 KV cache 成為 DeepSeek-V4.1-Flash 在 SM100 上的預設；v0.30 在 torch linear backend 加入 NVFP4 與 AutoRound 2–7 bit；Novita 開源的「Chord」W4A16 MoE kernel 讓 Kimi K2.x 在未調校的 B300 上最多快 2.15 倍。"
+    why:
+      en: "Quantization know-how (E18) is a direct path into kernel and perf roles."
+      zh: "量化知識（E18）是通往 kernel 與效能職位的直接路徑。"
+    episode: E18
+    source: "https://vllm.ai/blog/2026-09-15-novita-chord-w4a16-moe"
+  - id: t-taiwan
+    emoji: "🇹🇼"
+    title:
+      en: "Taiwan's vLLM community is officially a thing"
+      zh: "台灣 vLLM 社群正式成形"
+    body:
+      en: "On 10 Aug 2026, TAIONE Open Source Foundation and Embedded LLM announced a collaboration to build Taiwan's vLLM ecosystem, including a vLLM Fellowship Track with mentorship toward upstream contributions. It followed a vLLM Taipei Meetup (with talks from Embedded LLM, Inferact, Academia Sinica, Twinkle AI and WEKA) and a vLLM BoF at COSCUP x UbuCon Asia 2026."
+      zh: "2026 年 8 月 10 日，TAIONE 開源基金會與 Embedded LLM 宣布合作建立台灣的 vLLM 生態系，包含一個提供導師指導、協助完成上游貢獻的 vLLM Fellowship Track。在此之前已經辦過 vLLM Taipei Meetup（講者來自 Embedded LLM、Inferact、中研院、Twinkle AI 與 WEKA），以及 COSCUP x UbuCon Asia 2026 的 vLLM BoF。"
+    why:
+      en: "You don't have to learn alone, and there's a structured path to upstream."
+      zh: "你不用一個人學，而且有一條有結構的路通往上游貢獻。"
+    episode: E26
+    source: "https://macaubusiness.com/taione-open-source-foundation-and-embedded-llm-collaborate-to-build-taiwans-vllm-ecosystem/"
+  - id: t-systemone
+    emoji: "🧭"
+    title:
+      en: "On main: `/v1/systemone` turns an LLM into a classifier"
+      zh: "main 分支上：`/v1/systemone` 把 LLM 變成分類器"
+    body:
+      en: "A new structured-decisions endpoint asks typed multiple-choice questions about a 'state' and returns a probability for every option from a single output token. With prefix caching the state is prefilled once and each extra question costs only its own tokens. Unreleased as of 12 Oct 2026: it may change before it ships."
+      zh: "新的 structured decisions endpoint 針對一個「state」問有型別的選擇題，只用一個輸出 token 就回傳每個選項的機率。搭配 prefix caching，state 只需 prefill 一次，每多問一題只算那題自己的 token。截至 2026 年 10 月 12 日尚未正式發布，上線前可能還會改。"
+    why:
+      en: "Routing, guardrails and LLM-as-judge are one-token problems. Prefix caching (E10) is why this is cheap."
+      zh: "路由、guardrail、LLM-as-judge 都是一個 token 就能解決的問題。它之所以便宜，靠的是 prefix caching（E10）。"
+    episode: E10
+    source: "https://github.com/vllm-project/vllm/blob/main/docs/serving/online_serving/structured_decisions.md"
+  - id: t-metal
+    emoji: "🍎"
+    title:
+      en: "vllm-metal: paged, batched serving on a MacBook"
+      zh: "vllm-metal：在 MacBook 上做 paged、批次推論服務"
+    body:
+      en: "vllm-metal v0.28.0 (22 Sep 2026) brought concurrent serving to Apple Silicon. In the team's test, 8 requests with one long prompt finished in 3.64 s vs 10.99 s for mlx_lm on Qwen3.6-35B-A3B. It also adds batched MTP, GGUF loading and faster M5 prefill."
+      zh: "vllm-metal v0.28.0（2026 年 9 月 22 日）把並行服務帶到 Apple Silicon。團隊測試中，在 Qwen3.6-35B-A3B 上跑 8 個請求（含一個長 prompt），只要 3.64 秒，mlx_lm 則要 10.99 秒。另外還加入批次 MTP、GGUF 載入與更快的 M5 prefill。"
+    why:
+      en: "No NVIDIA GPU? You can still run continuous batching (E09) on your laptop and see it work."
+      zh: "沒有 NVIDIA GPU？你還是可以在筆電上跑 continuous batching（E09），親眼看它運作。"
+    episode: E09
+    source: "https://vllm.ai/blog/2026-09-22-vllm-metal-v0-28-0"
+  - id: t-coldstart
+    emoji: "🧊"
+    title:
+      en: "Cold starts are getting bullied"
+      zh: "冷啟動正在被霸凌"
+    body:
+      en: "v0.30 added Fast Start (`--load-format ipc_cache`) and v0.31 added the `vllm preload` weight-cache daemon plus experimental CRIU `vllm snapshot` for TP1 engines. Together they attack the minutes it takes a big model to come online."
+      zh: "v0.30 加入 Fast Start（`--load-format ipc_cache`），v0.31 加入 `vllm preload` 權重快取常駐程式，以及給 TP1 引擎用的實驗性 CRIU `vllm snapshot`。三者聯手對付大模型上線要花好幾分鐘的問題。"
+    why:
+      en: "Elastic serving and RL loops live or die on startup time. That's E28."
+      zh: "彈性服務與 RL 迴圈的成敗取決於啟動時間。這就是 E28。"
+    episode: E28
+    source: "https://github.com/vllm-project/vllm/releases/tag/v0.31.0"

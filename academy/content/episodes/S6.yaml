@@ -1,0 +1,125 @@
+# S6 — Frontier Watch. A *living* season: episodes here track what vLLM is shipping right now.
+# Refresh monthly. Every number names its source and baseline. Written October 2026.
+episodes:
+  - id: E27
+    season: S6
+    minutes: 20
+    title:
+      en: "Agents broke your benchmark: inference for agentic workloads"
+      zh: "Agent 把你的 benchmark 打爆了：為 agent 工作負載做推論"
+    hook:
+      en: "Your engine tops the tokens/sec leaderboard and still feels slow to an agent. The 2026 headline benchmark doesn't measure what you've been optimizing."
+      zh: "你的引擎在每秒 token 數排行榜上第一名，agent 用起來卻還是很慢。2026 年最受注目的 benchmark，量的根本不是你一直在優化的東西。"
+    aha:
+      en: |-
+        A chatbot request is "short prompt in, long answer out". An **agent** request is the opposite:
+
+        1. A **huge, mostly repeated prefix**: system prompt + tool schemas + the whole history so far.
+        2. A **short output** (a tool call), then a **pause** while the tool runs.
+        3. The same context **comes back** with a few hundred new tokens appended. Sometimes it branches into parallel sub-agents.
+
+        So the winning moves change:
+        - **Prefix-cache hit rate** (E10) matters more than raw decode speed.
+        - During the tool pause, KV must survive: **tiered offload** to CPU/SSD (E21) beats recomputing 100k tokens.
+        - You measure throughput **under a per-user speed floor** (e.g. 150 tok/s per user), not "max tokens/s at any latency".
+
+        vLLM's recent posts report agentic numbers on SemiAnalysis **AgentX** for exactly this reason.
+      zh: |-
+        聊天機器人的請求是「短 prompt 進、長回答出」。**Agent** 的請求剛好相反：
+
+        1. **超大而且大多重複的前綴**：system prompt + 工具定義 + 到目前為止的完整歷史。
+        2. **很短的輸出**（一個工具呼叫），接著**暫停**，等工具跑完。
+        3. 同一段 context **又回來了**，只多接上幾百個新 token。有時還會分岔成平行的子 agent。
+
+        所以致勝關鍵變了：
+        - **Prefix cache 命中率**（E10）比單純的 decode 速度更重要。
+        - 工具暫停期間 KV 必須活下來：**分層 offload** 到 CPU/SSD（E21），勝過重新計算 10 萬個 token。
+        - 吞吐量要在**每位使用者的速度下限**（例如每人 150 tok/s）之下量測，而不是「不管延遲的最大 tokens/s」。
+
+        vLLM 最近的文章都用 SemiAnalysis **AgentX** 報告 agent 數據，原因就在這裡。
+    tldr:
+      en:
+        - "Agent traffic = giant shared prefix, short outputs, pauses, and the context coming back."
+        - "Prefix-cache hit rate and KV survival across tool calls beat raw decode speed."
+        - "Report throughput under a per-user tokens/s floor, not unconstrained max throughput."
+      zh:
+        - "Agent 流量 = 巨大共享前綴、短輸出、暫停，然後 context 再回來。"
+        - "Prefix cache 命中率與 KV 能否撐過工具呼叫，比單純 decode 速度更關鍵。"
+        - "吞吐量要在每位使用者 tokens/s 下限之下回報，而不是無限制的最大吞吐量。"
+    pro:
+      en: "Agentic workloads invert the chat profile: long, highly reused prefixes, short outputs and idle gaps while tools run. That makes prefix-cache hit rate, KV retention across turns via host or SSD offload, and cache-aware routing the main levers, rather than peak decode speed. I'd benchmark goodput under a per-user tokens/s SLO with realistic multi-turn traces, and track cache hit rate, re-prefill tokens and TTFT on returning turns as first-class metrics."
+      zh: "Agent 工作負載把聊天的特性反過來：前綴很長且高度重用、輸出短，工具執行時還有閒置空檔。所以主要槓桿是 prefix cache 命中率、透過主機記憶體或 SSD offload 讓 KV 跨回合保留，以及感知快取的路由，而不是峰值 decode 速度。我會用真實的多輪 trace，在每位使用者 tokens/s 的 SLO 之下量測 goodput，並把快取命中率、重新 prefill 的 token 數，以及回訪回合的 TTFT 當成一級指標追蹤。"
+    followup:
+      en: "Your agent fleet runs on 8 replicas behind round-robin load balancing. Hit rate is 20%. What's the first thing you change?"
+      zh: "你的 agent 服務跑在 8 個副本上，前面是 round-robin 負載平衡。命中率只有 20%。你第一個改什麼？"
+    lab: Q2
+    lab_hint:
+      en: "`python academy/labs/paged_playground.py --scenario agent` replays a 4-turn agent session. Watch which blocks are reused, offloaded and recomputed."
+      zh: "`python academy/labs/paged_playground.py --scenario agent` 重播一段 4 回合的 agent 對話。觀察哪些 block 被重用、被 offload、被重新計算。"
+    deep_dive: academy/frontier/E27-agentic-inference.md
+    code: [prefix_hash, kv_offload, scheduler]
+  - id: E28
+    season: S6
+    minutes: 20
+    title:
+      en: "Cold starts are the new latency: Fast Start, preload and CRIU snapshots"
+      zh: "冷啟動是新的延遲：Fast Start、preload 與 CRIU 快照"
+    hook:
+      en: "Your p99 latency is 400 ms. Your autoscaler's p99 is four minutes. Guess which one your users actually feel at 9 a.m. on Monday."
+      zh: "你的 p99 延遲是 400 毫秒，你的自動擴展 p99 卻是 4 分鐘。猜猜星期一早上 9 點，使用者真正感受到的是哪一個？"
+    aha:
+      en: |-
+        Starting a vLLM engine is a pipeline, and every stage costs time:
+
+        1. **Fetch weights** (network or disk)
+        2. **Load + quantize** them onto the GPU
+        3. **Profile + compile**: a dummy forward measures peak memory and triggers torch.compile (cached after the first run)
+        4. **Allocate the KV cache** from what's left
+        5. **Capture CUDA graphs** for each batch size
+
+        For a big MoE, that adds up to minutes. Autoscaling, RL weight swaps and model switching all pay it again.
+
+        vLLM's 2026 answers:
+        - **v0.30 Fast Start**: `--load-format ipc_cache` maps already-loaded weights in over CUDA IPC.
+        - **v0.31 `vllm preload`**: a daemon that keeps post-quantized weights resident in GPU memory across engine restarts.
+        - **v0.31 `vllm snapshot`** (experimental, TP1): uses CRIU to freeze an *initialized* engine and restore it.
+
+        **Sleep mode** (`--enable-sleep-mode`) is the older sibling: it offloads or discards weights and KV so a GPU can be lent out, then wakes up quickly.
+      zh: |-
+        啟動一個 vLLM 引擎是一條流水線，每一站都要花時間：
+
+        1. **取得權重**（網路或磁碟）
+        2. **載入並量化**到 GPU 上
+        3. **量測 + 編譯**：跑一次假的 forward 量測峰值記憶體，同時觸發 torch.compile（第一次之後會快取）
+        4. 用剩下的記憶體**配置 KV cache**
+        5. 為每種 batch size **擷取 CUDA graph**
+
+        大型 MoE 加起來要好幾分鐘。自動擴展、RL 換權重、切換模型，每次都要再付一次。
+
+        vLLM 2026 年的解法：
+        - **v0.30 Fast Start**：`--load-format ipc_cache` 透過 CUDA IPC 直接映射已載入的權重。
+        - **v0.31 `vllm preload`**：一個常駐程式，讓量化後的權重在引擎重啟之間留在 GPU 記憶體。
+        - **v0.31 `vllm snapshot`**（實驗性，TP1）：用 CRIU 凍結一個*已初始化*的引擎，之後再還原。
+
+        **Sleep mode**（`--enable-sleep-mode`）是較早的兄弟：把權重與 KV 卸載或丟掉，讓 GPU 可以先借給別人，之後再快速喚醒。
+    tldr:
+      en:
+        - "Engine startup = fetch, load/quantize, profile + compile, KV allocation, CUDA-graph capture."
+        - "Fast Start (v0.30) and `vllm preload` (v0.31) keep weights resident across restarts."
+        - "CRIU snapshots (v0.31, experimental) restore an already-initialized engine."
+      zh:
+        - "引擎啟動 = 取得權重、載入／量化、量測 + 編譯、配置 KV、擷取 CUDA graph。"
+        - "Fast Start（v0.30）與 `vllm preload`（v0.31）讓權重在重啟之間常駐。"
+        - "CRIU 快照（v0.31，實驗性）可以還原一個已初始化的引擎。"
+    pro:
+      en: "I'd break cold start into weight fetch, load and quantization, memory profiling with compilation, KV allocation and CUDA-graph capture, then measure each one before optimizing. The usual fixes are local NVMe or streamed weights, a warm torch.compile cache and fewer capture sizes. vLLM 0.30 and 0.31 add weight residency across restarts (ipc_cache and the preload daemon) and experimental CRIU snapshots of an initialized engine. The trade-off is GPU memory pinned by idle weights versus scale-up time, so the right choice depends on traffic burstiness and how often weights change, as with RL rollouts."
+      zh: "我會把冷啟動拆成權重取得、載入與量化、量測記憶體與編譯、配置 KV，以及 CUDA graph 擷取，先逐項量測再優化。常見做法是本機 NVMe 或串流權重、預熱好的 torch.compile 快取，以及減少擷取的 batch size。vLLM 0.30 與 0.31 加入了跨重啟的權重常駐（ipc_cache 與 preload 常駐程式），以及實驗性的已初始化引擎 CRIU 快照。取捨在於閒置權重佔住的 GPU 記憶體 vs 擴展時間，所以要看流量有多突發，以及權重多常更換（例如 RL rollout）。"
+    followup:
+      en: "Which startup stage would you skip first for an RL loop that swaps weights every few minutes, and why isn't a snapshot enough there?"
+      zh: "對一個每幾分鐘就換一次權重的 RL 迴圈，你會先跳過哪個啟動階段？為什麼快照在那裡不夠用？"
+    lab: Q1
+    lab_hint:
+      en: "In Q1, time `vllm serve` twice: once cold, once with the compile cache warm. Read the startup log and write down how long each stage took."
+      zh: "在 Q1 中把 `vllm serve` 計時兩次：一次冷啟動，一次在編譯快取已預熱的情況下。讀啟動日誌，記下每個階段花了多久。"
+    deep_dive: academy/frontier/E28-cold-starts.md
+    code: [cli_serve, model_runner, cudagraph, weight_transfer]

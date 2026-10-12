@@ -1,0 +1,105 @@
+# "Follow one request" — the 12-stop tour used by /trace and episode E13.
+# Each stop points at a code-map entry (permalink at the pinned commit).
+title:
+  en: "One request, twelve stops"
+  zh: "一個請求，十二站"
+intro:
+  en: "`curl localhost:8000/v1/chat/completions -d '{\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}], \"stream\":true}'`. Let's follow it."
+  zh: "`curl localhost:8000/v1/chat/completions -d '{\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}], \"stream\":true}'`。我們跟著它走。"
+stops:
+  - n: 1
+    code: cli_serve
+    process: {en: "API server process", zh: "API server 行程"}
+    title: {en: "The server boots", zh: "伺服器啟動"}
+    what:
+      en: "`vllm serve <model>` parses args, starts the engine core process(es), loads the model on workers, profiles memory to size the KV cache, then starts the HTTP server."
+      zh: "`vllm serve <model>` 解析參數、啟動 engine core 行程、在 worker 上載入模型、量測記憶體來決定 KV cache 大小，最後啟動 HTTP 伺服器。"
+    carries: {en: "CLI args → VllmConfig", zh: "CLI 參數 → VllmConfig"}
+  - n: 2
+    code: api_router
+    process: {en: "API server process", zh: "API server 行程"}
+    title: {en: "HTTP route", zh: "HTTP 路由"}
+    what:
+      en: "FastAPI matches `/v1/chat/completions` and validates the JSON into a `ChatCompletionRequest`."
+      zh: "FastAPI 對應到 `/v1/chat/completions`，把 JSON 驗證成 `ChatCompletionRequest`。"
+    carries: {en: "JSON → ChatCompletionRequest", zh: "JSON → ChatCompletionRequest"}
+  - n: 3
+    code: chat_serving
+    process: {en: "API server process", zh: "API server 行程"}
+    title: {en: "Serving layer", zh: "Serving 層"}
+    what:
+      en: "`OpenAIServingChat` checks the model name, builds `SamplingParams` (temperature, max_tokens…), and prepares tool and reasoning parsers."
+      zh: "`OpenAIServingChat` 檢查模型名稱、建立 `SamplingParams`（temperature、max_tokens…），並準備工具呼叫與推理解析器。"
+    carries: {en: "Request → messages + SamplingParams", zh: "Request → 訊息 + SamplingParams"}
+  - n: 4
+    code: renderer
+    process: {en: "API server process", zh: "API server 行程"}
+    title: {en: "Render & tokenize", zh: "渲染與 tokenize"}
+    what:
+      en: "The renderer applies the chat template and tokenizes. `你好` becomes token IDs wrapped in the model's role markers and special tokens."
+      zh: "Renderer 套用 chat template 並 tokenize。`你好` 變成被模型的角色標記與特殊 token 包起來的 token ID。"
+    carries: {en: "messages → prompt token IDs", zh: "訊息 → prompt token ID"}
+  - n: 5
+    code: async_llm
+    process: {en: "API server process", zh: "API server 行程"}
+    title: {en: "AsyncLLM + InputProcessor", zh: "AsyncLLM + InputProcessor"}
+    what:
+      en: "`AsyncLLM.generate` asks the `InputProcessor` to build an `EngineCoreRequest`, registers an output queue for this request, and sends it to the core."
+      zh: "`AsyncLLM.generate` 請 `InputProcessor` 建立 `EngineCoreRequest`，替這個請求註冊一個輸出佇列，再送到 core。"
+    carries: {en: "token IDs → EngineCoreRequest", zh: "token ID → EngineCoreRequest"}
+  - n: 6
+    code: core_client
+    process: {en: "Process boundary (ZMQ)", zh: "行程邊界（ZMQ）"}
+    title: {en: "Cross the process boundary", zh: "跨越行程邊界"}
+    what:
+      en: "The core client serializes the request and pushes it over a ZMQ socket. The engine core runs in its own process, so HTTP and tokenization never block GPU scheduling."
+      zh: "Core client 把請求序列化，透過 ZMQ socket 送出。Engine core 在自己的行程裡執行，所以 HTTP 與 tokenize 永遠不會擋住 GPU 排程。"
+    carries: {en: "EngineCoreRequest (msgpack)", zh: "EngineCoreRequest（msgpack）"}
+  - n: 7
+    code: engine_core
+    process: {en: "Engine core process", zh: "Engine core 行程"}
+    title: {en: "The heartbeat", zh: "心跳"}
+    what:
+      en: "The busy loop adds the request to the scheduler. Then `EngineCore.step()` runs forever: schedule → execute → update."
+      zh: "忙碌迴圈把請求加入排程器。接著 `EngineCore.step()` 不停執行：排程 → 執行 → 更新。"
+    carries: {en: "EngineCoreRequest → Request", zh: "EngineCoreRequest → Request"}
+  - n: 8
+    code: scheduler
+    process: {en: "Engine core process", zh: "Engine core 行程"}
+    title: {en: "Who runs this step?", zh: "這一步誰能跑？"}
+    what:
+      en: "`Scheduler.schedule()` spends the token budget: running requests first, then ours from the waiting queue. It decides how many prompt tokens we get this step (chunked prefill)."
+      zh: "`Scheduler.schedule()` 分配 token 預算：先給執行中的請求，再從等待佇列給我們的請求。它決定我們這一步能處理多少 prompt token（chunked prefill）。"
+    carries: {en: "Request → SchedulerOutput (IDs, token counts, block IDs)", zh: "Request → SchedulerOutput（ID、token 數、block ID）"}
+  - n: 9
+    code: kv_cache_manager
+    process: {en: "Engine core process", zh: "Engine core 行程"}
+    title: {en: "Memory: hits and new blocks", zh: "記憶體：命中與新 block"}
+    what:
+      en: "`get_computed_blocks` finds prefix-cache hits (shared system prompt = free). `allocate_slots` grabs free blocks from the `BlockPool` for the rest. If there aren't enough, someone gets preempted."
+      zh: "`get_computed_blocks` 找出 prefix cache 命中（共用的 system prompt = 免費）。`allocate_slots` 從 `BlockPool` 拿空閒 block 給其餘部分。不夠的話，就有人被搶占。"
+    carries: {en: "block hashes → block IDs (block table)", zh: "block hash → block ID（block table）"}
+  - n: 10
+    code: model_runner
+    process: {en: "GPU worker process(es)", zh: "GPU worker 行程"}
+    title: {en: "Tensors happen here", zh: "Tensor 在這裡出現"}
+    what:
+      en: "The executor broadcasts the SchedulerOutput to workers. `GPUModelRunner.execute_model` builds input IDs, positions, block tables and slot mappings, then launches the model (often as a CUDA graph)."
+      zh: "Executor 把 SchedulerOutput 廣播給 worker。`GPUModelRunner.execute_model` 建立 input ID、positions、block table 與 slot mapping，接著啟動模型（通常以 CUDA graph 執行）。"
+    carries: {en: "SchedulerOutput → GPU tensors", zh: "SchedulerOutput → GPU tensor"}
+  - n: 11
+    code: flash_attn
+    process: {en: "GPU worker process(es)", zh: "GPU worker 行程"}
+    title: {en: "Model forward & paged attention", zh: "模型 forward 與分頁 attention"}
+    what:
+      en: "Each layer of `LlamaForCausalLM` (or your model) calls the Attention layer, which writes new K/V into paged blocks and runs the selected backend kernel (FlashAttention, FlashInfer, ROCm AITER…)."
+      zh: "`LlamaForCausalLM`（或你的模型）的每一層呼叫 Attention 層，把新的 K/V 寫進分頁 block，並執行被選中的 backend kernel（FlashAttention、FlashInfer、ROCm AITER…）。"
+    carries: {en: "hidden states → logits", zh: "hidden states → logits"}
+  - n: 12
+    code: output_processor
+    process: {en: "Back to the API server", zh: "回到 API server"}
+    title: {en: "Sample, detokenize, stream", zh: "抽樣、detokenize、串流"}
+    what:
+      en: "The `Sampler` picks the next token, then `Scheduler.update_from_output` records progress and checks stop conditions. Outputs travel back over ZMQ; the `OutputProcessor` detokenizes incrementally (multi-byte 中文 safe) and the server streams an SSE chunk. Then it's back to stop 8 for the next token."
+      zh: "`Sampler` 選出下一個 token，接著 `Scheduler.update_from_output` 記錄進度並檢查停止條件。輸出經由 ZMQ 傳回；`OutputProcessor` 做增量 detokenize（對多位元組的中文是安全的），伺服器送出一個 SSE chunk。接著回到第 8 站，處理下一個 token。"
+    carries: {en: "token ID → text delta → SSE", zh: "token ID → 文字片段 → SSE"}

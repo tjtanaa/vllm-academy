@@ -1,0 +1,296 @@
+# Bilingual glossary used by /glossary (with autocomplete) and the daily drop.
+glossary:
+  - term: Token
+    zh_term: "Token（詞元）"
+    aliases: [tokens, tokenizer, 詞元]
+    episode: E02
+    en: "An integer ID from the model's vocabulary representing a chunk of text. Models read, price and remember in tokens."
+    zh: "代表一段文字碎片的整數 ID，來自模型的詞表。模型的閱讀、計價與記憶都以 token 為單位。"
+  - term: Autoregressive generation
+    zh_term: "自迴歸生成"
+    aliases: [autoregressive, 自迴歸]
+    episode: E01
+    en: "Generating one token at a time, feeding each output back as input for the next step."
+    zh: "一次生成一個 token，每個輸出都作為下一步的輸入。"
+  - term: Prefill
+    zh_term: "Prefill（預填）"
+    aliases: [預填]
+    episode: E01
+    en: "Processing the known prompt tokens to build their KV cache and produce the first output logits. Usually compute-bound."
+    zh: "處理已知的 prompt token，建立它們的 KV cache 並產生第一個輸出的 logits。通常受限於算力。"
+  - term: Decode
+    zh_term: "Decode（解碼）"
+    aliases: [decoding, 解碼]
+    episode: E05
+    en: "Each subsequent generation step, processing one new token per sequence. Usually memory-bandwidth-bound."
+    zh: "之後的每個生成步驟，每個序列處理一個新 token。通常受限於記憶體頻寬。"
+  - term: KV cache
+    zh_term: "KV 快取"
+    aliases: [kv, kvcache, kv-cache, KV 快取]
+    episode: E06
+    en: "Stored key/value tensors of past tokens for every layer, so each new token doesn't recompute the prefix. Size ∝ tokens × layers × KV heads × head_dim × 2 × bytes."
+    zh: "儲存過去 token 在每一層的 key/value tensor，新 token 就不用重算前綴。大小 ∝ token 數 × 層數 × KV heads × head_dim × 2 × bytes。"
+  - term: PagedAttention
+    zh_term: "PagedAttention（分頁注意力）"
+    aliases: [paged attention, paging, 分頁注意力]
+    episode: E08
+    en: "Storing KV cache in fixed-size, non-contiguous blocks addressed via a per-sequence block table, like OS virtual memory. vLLM's founding idea."
+    zh: "把 KV cache 存在固定大小、不需連續的 block 中，透過每個序列的 block table 定址，就像作業系統的虛擬記憶體。vLLM 的起家觀念。"
+  - term: Block table
+    zh_term: "Block table（區塊表）"
+    aliases: [page table, 區塊表]
+    episode: E08
+    en: "Per-request mapping from logical KV block index to physical block ID."
+    zh: "每個請求從邏輯 KV block 索引對應到實體 block ID 的表。"
+  - term: Continuous batching
+    zh_term: "連續批次處理"
+    aliases: [iteration-level scheduling, in-flight batching, 連續批次]
+    episode: E09
+    en: "Re-deciding which sequences are in the batch at every iteration, so finished requests leave and new ones join immediately."
+    zh: "每個迭代都重新決定批次中的序列，完成的請求立刻離開、新的請求立刻加入。"
+  - term: Prefix caching
+    zh_term: "前綴快取"
+    aliases: [automatic prefix caching, apc, 前綴快取]
+    episode: E10
+    en: "Reusing KV blocks for identical leading tokens across requests, identified by chained block hashes."
+    zh: "用串接的 block hash 識別，讓不同請求之間相同的前導 token 可以重複使用 KV block。"
+  - term: Chunked prefill
+    zh_term: "分塊預填"
+    aliases: [分塊預填]
+    episode: E11
+    en: "Splitting a long prompt's prefill across several steps so it shares each step's token budget with decodes."
+    zh: "把長 prompt 的 prefill 分散到多個步驟，與 decode 共用每一步的 token 預算。"
+  - term: Token budget
+    zh_term: "Token 預算"
+    aliases: [max_num_batched_tokens, 預算]
+    episode: E11
+    en: "The maximum number of tokens processed in one engine step (vLLM: max_num_batched_tokens)."
+    zh: "引擎一步最多處理的 token 數（vLLM：max_num_batched_tokens）。"
+  - term: Preemption
+    zh_term: "搶占"
+    aliases: [preempt, 搶占]
+    episode: E14
+    en: "Evicting a running request's KV blocks when memory runs out; in vLLM V1 the request is later recomputed."
+    zh: "記憶體不足時，把執行中請求的 KV block 釋放掉；在 vLLM V1 中，該請求之後會重新計算。"
+  - term: TTFT
+    zh_term: "首個 Token 時間"
+    aliases: [time to first token]
+    episode: E24
+    en: "Time from sending a request to receiving the first output token: queueing + prefill."
+    zh: "從送出請求到收到第一個輸出 token 的時間：排隊 + prefill。"
+  - term: ITL
+    zh_term: "Token 間延遲"
+    aliases: [inter-token latency, tpot, time per output token]
+    episode: E24
+    en: "Time between consecutive streamed tokens (TPOT is the per-request average excluding the first token)."
+    zh: "連續串流 token 之間的時間（TPOT 是每個請求排除第一個 token 後的平均值）。"
+  - term: Goodput
+    zh_term: "有效吞吐量"
+    aliases: [有效吞吐量]
+    episode: E24
+    en: "Throughput counting only requests that meet your latency SLOs."
+    zh: "只計算符合延遲 SLO 的請求的吞吐量。"
+  - term: Roofline
+    zh_term: "Roofline 模型"
+    aliases: [arithmetic intensity, 算術強度]
+    episode: E05
+    en: "A model of performance: attainable FLOP/s = min(peak compute, bandwidth × arithmetic intensity)."
+    zh: "效能模型：可達到的 FLOP/s = min（峰值算力, 頻寬 × 算術強度）。"
+  - term: HBM
+    zh_term: "高頻寬記憶體"
+    aliases: [high bandwidth memory]
+    episode: E05
+    en: "The GPU's main memory: large and fast, but still the bottleneck for decode."
+    zh: "GPU 的主記憶體：容量大、速度快，但仍然是 decode 的瓶頸。"
+  - term: GQA
+    zh_term: "分組查詢注意力"
+    aliases: [grouped-query attention, mqa, multi-query attention]
+    episode: E07
+    en: "Several query heads share one KV head, shrinking the KV cache (e.g. 64 query / 8 KV heads = 8× smaller than MHA)."
+    zh: "多個 query heads 共用一個 KV head，縮小 KV cache（例如 64 個 query / 8 個 KV heads = 比 MHA 小 8 倍）。"
+  - term: MLA
+    zh_term: "多頭潛在注意力"
+    aliases: [multi-head latent attention]
+    episode: E07
+    en: "DeepSeek's attention that caches a compressed latent vector per token instead of per-head K/V, making the KV cache very small."
+    zh: "DeepSeek 的 attention，每個 token 快取一個壓縮過的潛在向量，而不是每個 head 的 K/V，讓 KV cache 非常小。"
+  - term: RoPE
+    zh_term: "旋轉位置編碼"
+    aliases: [rotary embedding, rotary position embedding]
+    episode: E03
+    en: "Rotary position embedding: encodes position by rotating Q/K vectors; used by Llama, Qwen and most modern LLMs."
+    zh: "旋轉位置編碼：透過旋轉 Q/K 向量來編碼位置；Llama、Qwen 與大多數現代 LLM 都使用。"
+  - term: Causal mask
+    zh_term: "因果遮罩"
+    aliases: [因果遮罩, masking]
+    episode: E03
+    en: "Prevents each position from attending to later positions."
+    zh: "防止每個位置去注意後面的位置。"
+  - term: Logits
+    zh_term: "Logits（未正規化分數）"
+    aliases: [logit]
+    episode: E01
+    en: "Unnormalized scores over the vocabulary; softmax turns them into probabilities."
+    zh: "針對詞表的未正規化分數；經過 softmax 變成機率。"
+  - term: Sampling
+    zh_term: "抽樣"
+    aliases: [temperature, top-p, top-k, greedy, 抽樣]
+    episode: E01
+    en: "Choosing the next token from the distribution: greedy (argmax) or random with temperature, top-k, top-p and min-p."
+    zh: "從分布中選擇下一個 token：greedy（argmax），或搭配 temperature、top-k、top-p、min-p 的隨機抽樣。"
+  - term: Chat template
+    zh_term: "對話模板"
+    aliases: [template, 對話模板]
+    episode: E02
+    en: "Rules (often Jinja) that render a list of chat messages into the model's exact input text and special tokens."
+    zh: "把聊天訊息清單渲染成模型實際輸入文字與特殊 token 的規則（通常是 Jinja）。"
+  - term: Speculative decoding
+    zh_term: "推測解碼"
+    aliases: [spec decode, speculative, eagle, mtp, 推測解碼]
+    episode: E17
+    en: "A cheap drafter proposes several tokens; the target model verifies them in one pass. Output distribution unchanged."
+    zh: "便宜的草稿模型先提出好幾個 token，目標模型一次驗證。輸出分布不變。"
+  - term: Acceptance rate
+    zh_term: "接受率"
+    aliases: [接受率]
+    episode: E17
+    en: "Fraction of drafted tokens accepted by the target model; drives speculative-decoding speedup."
+    zh: "草稿 token 被目標模型接受的比例；決定推測解碼的加速幅度。"
+  - term: Quantization
+    zh_term: "量化"
+    aliases: [fp8, int4, nvfp4, awq, gptq, 量化]
+    episode: E18
+    en: "Representing weights, activations or KV with fewer bits (FP8, INT8, INT4, FP4) to save memory and bandwidth."
+    zh: "用更少的位元表示權重、激活值或 KV（FP8、INT8、INT4、FP4），節省記憶體與頻寬。"
+  - term: Tensor parallelism
+    zh_term: "張量平行"
+    aliases: [tp, 張量平行]
+    episode: E19
+    en: "Splitting each layer's matrices across GPUs, with collective communication per layer."
+    zh: "把每一層的矩陣切到多張 GPU，每層都要做集體通訊。"
+  - term: Pipeline parallelism
+    zh_term: "管線平行"
+    aliases: [pp, 管線平行]
+    episode: E19
+    en: "Splitting consecutive layers into stages on different GPUs or nodes."
+    zh: "把連續的層切成多個階段，放在不同的 GPU 或節點上。"
+  - term: Data parallelism
+    zh_term: "資料平行"
+    aliases: [dp, 資料平行]
+    episode: E19
+    en: "Running independent replicas that serve different requests."
+    zh: "執行多個獨立副本，各自服務不同的請求。"
+  - term: Expert parallelism
+    zh_term: "專家平行"
+    aliases: [ep, moe, mixture of experts, 專家平行]
+    episode: E19
+    en: "Distributing MoE experts across GPUs; tokens are routed with all-to-all communication."
+    zh: "把 MoE 的 experts 分散到多張 GPU；token 透過 all-to-all 通訊路由。"
+  - term: MoE
+    zh_term: "混合專家模型"
+    aliases: [mixture of experts, 混合專家]
+    episode: E19
+    en: "A model where each token activates only a few expert MLPs out of many, giving huge total parameters with modest per-token compute."
+    zh: "每個 token 只啟用眾多 expert MLP 中的少數幾個，總參數量很大，但每個 token 的運算量不大。"
+  - term: Disaggregated serving
+    zh_term: "分離部署"
+    aliases: [p/d disaggregation, pd, disagg, 分離部署]
+    episode: E20
+    en: "Running prefill and decode on separate instances and transferring KV between them."
+    zh: "在不同的實例上執行 prefill 與 decode，並在兩者之間傳輸 KV。"
+  - term: KV connector
+    zh_term: "KV 連接器"
+    aliases: [connector, nixl, mooncake, lmcache]
+    episode: E20
+    en: "vLLM's plugin interface (KVConnectorBase_V1) for moving KV blocks between instances or storage tiers."
+    zh: "vLLM 用來在實例或儲存層之間搬移 KV block 的外掛介面（KVConnectorBase_V1）。"
+  - term: KV offloading
+    zh_term: "KV 卸載"
+    aliases: [offload, tiered kv, KV 卸載]
+    episode: E21
+    en: "Moving cold KV blocks to CPU memory, SSD or remote storage instead of discarding them."
+    zh: "把冷的 KV block 搬到 CPU 記憶體、SSD 或遠端儲存，而不是丟掉。"
+  - term: CUDA graph
+    zh_term: "CUDA 圖"
+    aliases: [cudagraph, cuda graphs]
+    episode: E15
+    en: "A captured sequence of GPU kernels replayed with one launch to cut CPU overhead."
+    zh: "擷取下來的一連串 GPU kernel，可以一次發射重播，降低 CPU 開銷。"
+  - term: torch.compile
+    zh_term: "torch.compile 編譯"
+    aliases: [compile, inductor]
+    episode: E15
+    en: "PyTorch's compiler; vLLM uses it with custom passes to fuse operations."
+    zh: "PyTorch 的編譯器；vLLM 搭配客製的 pass 用它來融合運算。"
+  - term: Attention backend
+    zh_term: "Attention 後端"
+    aliases: [flashattention, flashinfer, aiter, backend]
+    episode: E15
+    en: "The kernel implementation of attention chosen per platform and model (FlashAttention, FlashInfer, Triton, ROCm AITER, MLA…)."
+    zh: "依平台與模型選擇的 attention kernel 實作（FlashAttention、FlashInfer、Triton、ROCm AITER、MLA…）。"
+  - term: Model runner
+    zh_term: "模型執行器"
+    aliases: [gpumodelrunner, runner, mrv2]
+    episode: E15
+    en: "Worker component that builds input tensors from the scheduler's decision, runs the model and samples."
+    zh: "Worker 中的元件，依排程器的決定建立輸入 tensor、執行模型並抽樣。"
+  - term: EngineCore
+    zh_term: "引擎核心"
+    aliases: [engine core, 引擎核心]
+    episode: E13
+    en: "vLLM V1's busy-loop process that runs schedule → execute → update every step."
+    zh: "vLLM V1 中不停執行「排程 → 執行 → 更新」迴圈的行程。"
+  - term: OpenAI-compatible API
+    zh_term: "相容 OpenAI 的 API"
+    aliases: [openai api, /v1/chat/completions]
+    episode: E13
+    en: "vLLM's HTTP server speaks the OpenAI Chat Completions/Completions/Responses formats, so existing clients just work."
+    zh: "vLLM 的 HTTP 伺服器支援 OpenAI Chat Completions/Completions/Responses 格式，現有客戶端可以直接使用。"
+  - term: LoRA
+    zh_term: "低秩適配"
+    aliases: [multi-lora, adapter]
+    episode: E19
+    en: "Low-rank adapter weights; vLLM can serve many LoRAs on one base model simultaneously."
+    zh: "低秩適配器權重；vLLM 可以在同一個基礎模型上同時服務很多個 LoRA。"
+  - term: Structured output
+    zh_term: "結構化輸出"
+    aliases: [guided decoding, json mode, 結構化輸出]
+    episode: E01
+    en: "Constraining sampling with a grammar or JSON schema so the output is always valid."
+    zh: "用文法或 JSON schema 限制抽樣，讓輸出永遠合法。"
+  - term: Rollout
+    zh_term: "Rollout（展開生成）"
+    aliases: [rl, grpo]
+    episode: E22
+    en: "In RL post-training, generating many candidate answers to be scored; essentially large-scale inference."
+    zh: "在 RL 後訓練中，生成大量候選答案以供評分；本質上就是大規模推論。"
+  - term: DCO
+    zh_term: "開發者原創聲明"
+    aliases: [signed-off-by, sign-off]
+    episode: E23
+    en: "Developer Certificate of Origin; vLLM commits need a Signed-off-by line (`git commit -s`)."
+    zh: "Developer Certificate of Origin；vLLM 的 commit 需要 Signed-off-by 這一行（`git commit -s`）。"
+  - term: Sleep mode
+    zh_term: "休眠模式"
+    aliases: [sleep, wake_up]
+    episode: E22
+    en: "vLLM feature that offloads or discards weights and KV to free GPU memory, then wakes up later; popular for RL."
+    zh: "vLLM 的功能：卸載或丟棄權重與 KV 以釋放 GPU 記憶體，之後再喚醒；在 RL 中很常用。"
+  - term: Agentic throughput
+    zh_term: "Agent 吞吐量"
+    aliases: [agentx, agentic, agent workload]
+    episode: E27
+    en: "Throughput measured on multi-turn, tool-calling agent traces, usually under a per-user tokens/s floor. SemiAnalysis AgentX is the benchmark vLLM reports in 2026."
+    zh: "在多回合、會呼叫工具的 agent trace 上量測的吞吐量，通常會設定每位使用者的 tokens/s 下限。SemiAnalysis AgentX 是 vLLM 在 2026 年回報用的 benchmark。"
+  - term: Cold start
+    zh_term: "冷啟動"
+    aliases: [startup, fast start, preload, ipc_cache]
+    episode: E28
+    en: "Time from launching an engine to serving the first request: weight fetch, load, compile, CUDA-graph capture and KV profiling. vLLM 0.30/0.31 add weight residency (ipc_cache, `vllm preload`) to shrink it."
+    zh: "從啟動引擎到能服務第一個請求的時間：取得權重、載入、編譯、擷取 CUDA graph、量測 KV。vLLM 0.30/0.31 加入權重常駐（ipc_cache、`vllm preload`）來縮短它。"
+  - term: CRIU snapshot
+    zh_term: "CRIU 快照"
+    aliases: [criu, vllm snapshot, snapshot]
+    episode: E28
+    en: "Checkpoint/Restore In Userspace: a Linux tool that freezes a running process to disk. `vllm snapshot` (v0.31, experimental, TP1) uses it to restore an already-initialized engine."
+    zh: "Checkpoint/Restore In Userspace：把執行中的 process 凍結存到磁碟的 Linux 工具。`vllm snapshot`（v0.31，實驗性，TP1）用它來還原已初始化的引擎。"

@@ -20,3 +20,5 @@ site/
 .DS_Store
 /HANDBOOK.md
 /START_HERE.html
+discord_bot/data/
+*.sqlite3

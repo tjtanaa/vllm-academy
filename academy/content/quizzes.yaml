@@ -1,0 +1,851 @@
+# Multiple-choice questions. `answer` is the 0-based index of the correct option.
+# Options must be in the same order in both languages.
+quizzes:
+  # ---------------- S0 ----------------
+  - id: q-e01-1
+    episode: E01
+    q: {en: "What does one forward pass of a decoder LLM produce during generation?", zh: "生成時，decoder LLM 的一次 forward 會產生什麼？"}
+    options:
+      en: ["A full sentence", "A probability distribution over the next token", "The KV cache only", "A list of candidate answers"]
+      zh: ["一整個句子", "下一個 token 的機率分布", "只有 KV cache", "一串候選答案"]
+    answer: 1
+    explain:
+      en: "Each pass scores every vocabulary entry as the next token; sampling picks one, and the loop repeats."
+      zh: "每次 forward 會替詞表中每個項目打分數，作為下一個 token 的候選；抽樣選出一個後，迴圈繼續。"
+  - id: q-e01-2
+    episode: E01
+    q: {en: "Processing the whole prompt in the first forward pass is called…", zh: "第一次 forward 處理整段 prompt，稱為…"}
+    options:
+      en: ["Decode", "Prefill", "Sampling", "Detokenization"]
+      zh: ["Decode", "Prefill", "Sampling（抽樣）", "Detokenization（反 tokenize）"]
+    answer: 1
+    explain:
+      en: "Prefill processes the known prompt tokens (in parallel); decode then advances one generated token per step."
+      zh: "Prefill 處理已知的 prompt token（可平行）；之後 decode 每一步推進一個生成的 token。"
+  - id: q-e01-3
+    episode: E01
+    q: {en: "Which job belongs to the serving engine (vLLM), not the model weights?", zh: "下列哪一項是推論引擎（vLLM）的工作，而不是模型權重的工作？"}
+    options:
+      en: ["Computing attention scores", "Deciding which user's request runs in the next step", "Storing what the model learned", "Choosing the vocabulary"]
+      zh: ["計算 attention 分數", "決定下一步要跑哪個使用者的請求", "儲存模型學到的知識", "決定詞表"]
+    answer: 1
+    explain:
+      en: "Scheduling, memory management, batching and streaming are engine responsibilities."
+      zh: "排程、記憶體管理、批次處理與串流輸出，都是引擎的責任。"
+  - id: q-e02-1
+    episode: E02
+    q: {en: "Why did models historically struggle to count letters in \"strawberry\"?", zh: "為什麼模型過去很難數出「strawberry」有幾個字母？"}
+    options:
+      en: ["They lack enough parameters", "They see subword tokens, not individual characters", "English is not in their training data", "Sampling temperature was too high"]
+      zh: ["參數不夠多", "它們看到的是 subword token，不是單一字元", "訓練資料裡沒有英文", "抽樣溫度太高"]
+    answer: 1
+    explain:
+      en: "Tokenizers merge characters into chunks, so letter-level structure is hidden inside token IDs."
+      zh: "Tokenizer 把字元合併成碎片，字母層級的結構被藏在 token ID 裡面。"
+  - id: q-e02-2
+    episode: E02
+    q: {en: "Context-window limits and API prices are usually counted in…", zh: "Context window 上限和 API 價格，通常用什麼計算？"}
+    options:
+      en: ["Characters", "Words", "Tokens", "Bytes of UTF-8"]
+      zh: ["字元", "單字", "Token", "UTF-8 位元組"]
+    answer: 2
+    explain:
+      en: "Everything inside the model, including KV memory, scales with tokens."
+      zh: "模型內部的一切（包含 KV 記憶體）都隨 token 數變化。"
+  - id: q-e02-3
+    episode: E02
+    q: {en: "What does a chat template do?", zh: "Chat template 的作用是什麼？"}
+    options:
+      en: ["Translates the reply", "Serializes roles and messages into one token stream with special tokens", "Compresses the KV cache", "Selects the GPU kernel"]
+      zh: ["翻譯回覆", "把角色與訊息序列化成一條帶特殊 token 的 token 串", "壓縮 KV cache", "選擇 GPU kernel"]
+    answer: 1
+    explain:
+      en: "The model only sees a flat sequence; the template defines how system/user/assistant turns are encoded."
+      zh: "模型只看得到一條扁平的序列；template 定義 system/user/assistant 各輪要怎麼編碼。"
+  - id: q-e03-1
+    episode: E03
+    q: {en: "What does the causal mask prevent?", zh: "因果遮罩（causal mask）防止什麼？"}
+    options:
+      en: ["Exploding gradients", "A token attending to future positions", "Overfitting", "Tokens attending to themselves"]
+      zh: ["梯度爆炸", "token 去注意未來的位置", "過擬合", "token 注意自己"]
+    answer: 1
+    explain:
+      en: "Position i may only attend to positions ≤ i, which makes the model a valid next-token predictor."
+      zh: "位置 i 只能注意 ≤ i 的位置，模型才是合法的下一個 token 預測器。"
+  - id: q-e03-2
+    episode: E03
+    q: {en: "Attention scores are computed as…", zh: "Attention 分數的計算方式是…"}
+    options:
+      en: ["softmax(QKᵀ/√d)", "ReLU(QV)", "sigmoid(K+V)", "QKV summed then normalized"]
+      zh: ["softmax(QKᵀ/√d)", "ReLU(QV)", "sigmoid(K+V)", "把 Q、K、V 相加後正規化"]
+    answer: 0
+    explain:
+      en: "Scaled dot-product between queries and keys, softmaxed into weights that mix the values."
+      zh: "Query 與 key 做縮放點積，經過 softmax 變成權重，再拿來混合 value。"
+  - id: q-e03-3
+    episode: E03
+    q: {en: "Which is NOT a typical difference between modern Llama/Qwen and a textbook Transformer?", zh: "下列哪一項「不是」現代 Llama/Qwen 與教科書 Transformer 的典型差異？"}
+    options:
+      en: ["RoPE positions", "Grouped-query attention", "RMSNorm", "Removing attention entirely"]
+      zh: ["RoPE 位置編碼", "Grouped-query attention", "RMSNorm", "完全拿掉 attention"]
+    answer: 3
+    explain:
+      en: "They keep attention; they change positions, KV-head sharing, normalization and the MLP activation."
+      zh: "它們保留 attention；改的是位置編碼、KV head 共用、正規化方式與 MLP 的激活函數。"
+  - id: q-e04-1
+    episode: E04
+    q: {en: "Why can training process all positions of a sequence in parallel?", zh: "為什麼訓練時可以平行處理序列的所有位置？"}
+    options:
+      en: ["GPUs are faster during training", "Teacher forcing: the true previous tokens are already known", "Training uses no attention", "Gradients are computed on CPU"]
+      zh: ["訓練時 GPU 比較快", "Teacher forcing：正確的前一個 token 都已知", "訓練不用 attention", "梯度在 CPU 上計算"]
+    answer: 1
+    explain:
+      en: "With the ground-truth sequence available, every position's input is known up front."
+      zh: "有了正確答案序列，每個位置的輸入一開始就都知道了。"
+  - id: q-e04-2
+    episode: E04
+    q: {en: "Which statement about inference cost is most accurate?", zh: "關於推論成本，哪一個敘述最正確？"}
+    options:
+      en: ["It's a one-time cost like training", "It grows with every user and every token served", "It's zero once the model is trained", "It only depends on model size"]
+      zh: ["和訓練一樣是一次性成本", "隨著服務的每個使用者、每個 token 增加", "模型訓練完就變成零", "只和模型大小有關"]
+    answer: 1
+    explain:
+      en: "Inference runs for the lifetime of the product, which is why making it efficient matters so much."
+      zh: "推論會跟著產品一直跑下去，所以讓它更有效率非常重要。"
+  # ---------------- S1 ----------------
+  - id: q-e05-1
+    episode: E05
+    q: {en: "At batch size 1, LLM decode on a modern GPU is usually limited by…", zh: "Batch size 1 時，現代 GPU 上的 LLM decode 通常受限於…"}
+    options:
+      en: ["Tensor-core FLOPs", "Memory bandwidth", "Disk I/O", "Network latency"]
+      zh: ["Tensor core 算力", "記憶體頻寬", "硬碟 I/O", "網路延遲"]
+    answer: 1
+    explain:
+      en: "All weights are streamed from HBM for ~2 FLOPs each, so bytes moved, not math, sets the time."
+      zh: "所有權重都要從 HBM 搬出來，每個只做約 2 FLOP，所以決定時間的是搬了多少 bytes，不是運算量。"
+  - id: q-e05-2
+    episode: E05
+    q: {en: "An 8B bf16 model on a GPU with 3.35 TB/s bandwidth. Best-case single-user decode speed is roughly…", zh: "8B bf16 模型，GPU 頻寬 3.35 TB/s。單一使用者 decode 的理論最佳速度大約是…"}
+    options:
+      en: ["20 tokens/s", "200 tokens/s", "2,000 tokens/s", "20,000 tokens/s"]
+      zh: ["每秒 20 個 token", "每秒 200 個 token", "每秒 2,000 個 token", "每秒 20,000 個 token"]
+    answer: 1
+    explain:
+      en: "16 GB per step ÷ 3.35 TB/s ≈ 4.8 ms → ~200 tokens/s (ignoring KV reads and overheads)."
+      zh: "每步 16 GB ÷ 3.35 TB/s ≈ 4.8 ms → 每秒約 200 個 token（忽略 KV 讀取與其他開銷）。"
+  - id: q-e05-3
+    episode: E05
+    q: {en: "Why does batching many users improve decode throughput?", zh: "為什麼把很多使用者一起批次處理，能提高 decode 吞吐量？"}
+    options:
+      en: ["It reduces the model size", "Each weight loaded from memory is reused for many tokens", "It skips attention", "It lowers the clock speed"]
+      zh: ["它讓模型變小", "從記憶體載入的每個權重，可以被很多個 token 重複使用", "它跳過 attention", "它降低時脈"]
+    answer: 1
+    explain:
+      en: "Arithmetic intensity rises roughly with batch size until compute becomes the limit."
+      zh: "算術強度大致隨 batch size 上升，直到算力變成瓶頸。"
+  - id: q-e06-1
+    episode: E06
+    q: {en: "Why is it valid to reuse cached K/V for earlier tokens?", zh: "為什麼可以重複使用早先 token 的快取 K/V？"}
+    options:
+      en: ["Weights change slowly", "Causal masking means earlier tokens' K/V never depend on later tokens", "The cache is recomputed every step anyway", "Attention is linear"]
+      zh: ["權重變化很慢", "因果遮罩讓早先 token 的 K/V 永遠不依賴後面的 token", "反正每一步都會重算 cache", "Attention 是線性的"]
+    answer: 1
+    explain:
+      en: "Past positions can't see the future, so their K/V are fixed once computed."
+      zh: "過去的位置看不到未來，所以它們的 K/V 一旦算出來就固定了。"
+  - id: q-e06-2
+    episode: E06
+    q: {en: "After prefilling prompt [11, 22, 33] and sampling 44, how many positions are in the KV cache?", zh: "Prefill prompt [11, 22, 33] 並抽樣出 44 之後，KV cache 裡有幾個位置？"}
+    options:
+      en: ["2", "3", "4", "5"]
+      zh: ["2", "3", "4", "5"]
+    answer: 1
+    explain:
+      en: "44 is sampled but not yet processed; it enters the cache on the next forward pass."
+      zh: "44 已經抽樣出來，但還沒被處理；下一次 forward 才會進 cache。"
+  - id: q-e06-3
+    episode: E06
+    q: {en: "KV memory per token is proportional to…", zh: "每個 token 的 KV 記憶體與什麼成正比？"}
+    options:
+      en: ["Vocabulary size", "Layers × KV heads × head_dim × 2 × bytes", "Number of query heads only", "MLP width"]
+      zh: ["詞表大小", "層數 × KV heads × head_dim × 2 × bytes", "只有 query head 數量", "MLP 寬度"]
+    answer: 1
+    explain:
+      en: "Both K and V (×2) are stored per layer, per KV head."
+      zh: "每一層、每個 KV head 都要存 K 和 V（所以 ×2）。"
+  - id: q-e07-1
+    episode: E07
+    q: {en: "Llama-3.1-70B (80 layers, 8 KV heads, head_dim 128, bf16). KV per token is about…", zh: "Llama-3.1-70B（80 層、8 個 KV heads、head_dim 128、bf16）。每個 token 的 KV 大約是…"}
+    options:
+      en: ["40 KiB", "320 KiB", "2.5 MiB", "40 GiB"]
+      zh: ["40 KiB", "320 KiB", "2.5 MiB", "40 GiB"]
+    answer: 1
+    explain:
+      en: "2 × 80 × 8 × 128 × 2 B = 327,680 B = 320 KiB."
+      zh: "2 × 80 × 8 × 128 × 2 B = 327,680 B = 320 KiB。"
+  - id: q-e07-2
+    episode: E07
+    q: {en: "A candidate uses 64 query heads instead of 8 KV heads in the formula. Their answer is…", zh: "某位面試者在公式裡用了 64 個 query heads，而不是 8 個 KV heads。他的答案會…"}
+    options:
+      en: ["Correct", "2× too big", "8× too big", "8× too small"]
+      zh: ["正確", "大 2 倍", "大 8 倍", "小 8 倍"]
+    answer: 2
+    explain:
+      en: "With GQA, 8 query heads share each KV head; only KV heads are cached."
+      zh: "在 GQA 中，每 8 個 query heads 共用一個 KV head；只有 KV heads 會被快取。"
+  - id: q-e07-3
+    episode: E07
+    q: {en: "Switching the KV cache from bf16 to FP8 roughly…", zh: "把 KV cache 從 bf16 換成 FP8，大約會…"}
+    options:
+      en: ["Halves KV memory per token", "Doubles KV memory per token", "Has no effect on memory", "Removes the need for a KV cache"]
+      zh: ["每 token KV 記憶體減半", "每 token KV 記憶體加倍", "對記憶體沒有影響", "不再需要 KV cache"]
+    answer: 0
+    explain:
+      en: "1 byte per value instead of 2, plus small scale metadata, so about 2× more tokens fit."
+      zh: "每個數值從 2 bytes 變 1 byte（再加一點 scale 資料），大約可以放 2 倍的 token。"
+  - id: q-e08-1
+    episode: E08
+    q: {en: "PagedAttention is most directly inspired by…", zh: "PagedAttention 最直接的靈感來源是…"}
+    options:
+      en: ["Database indexes", "Virtual memory paging in operating systems", "TCP congestion control", "Garbage collection"]
+      zh: ["資料庫索引", "作業系統的虛擬記憶體分頁", "TCP 壅塞控制", "垃圾回收"]
+    answer: 1
+    explain:
+      en: "Fixed-size pages plus a per-sequence page (block) table, just like an OS."
+      zh: "固定大小的分頁加上每個序列一張分頁（block）表，和作業系統一樣。"
+  - id: q-e08-2
+    episode: E08
+    q: {en: "With paged KV, the maximum wasted KV space per request is about…", zh: "使用分頁 KV 時，每個請求最多浪費的 KV 空間大約是…"}
+    options:
+      en: ["Half the max length", "One partially filled block", "Zero, always", "One full layer"]
+      zh: ["最大長度的一半", "一個沒填滿的 block", "永遠是零", "一整層"]
+    answer: 1
+    explain:
+      en: "Blocks are allocated on demand; only the last block may be partly empty."
+      zh: "Block 是需要時才配置；只有最後一個 block 可能沒填滿。"
+  - id: q-e08-3
+    episode: E08
+    q: {en: "What lets two requests safely share the same physical KV block?", zh: "什麼機制讓兩個請求能安全共用同一個實體 KV block？"}
+    options:
+      en: ["Locks on every token", "Reference counting (plus copy-on-write if one diverges)", "Duplicating the block", "Sharing is impossible"]
+      zh: ["每個 token 都上鎖", "參照計數（若其中一個分歧，則 copy-on-write）", "複製一份 block", "不可能共用"]
+    answer: 1
+    explain:
+      en: "A block is freed only when its ref count reaches zero; full shared blocks are treated as immutable."
+      zh: "Block 只有在參照計數歸零時才會釋放；填滿的共用 block 被視為不可變。"
+  # ---------------- S2 ----------------
+  - id: q-e09-1
+    episode: E09
+    q: {en: "The main waste in static (request-level) batching is…", zh: "Static（以請求為單位的）batching 主要的浪費是…"}
+    options:
+      en: ["Too many kernels", "Slots idle while waiting for the longest request in the batch", "Tokenization overhead", "Too much prefix caching"]
+      zh: ["kernel 太多", "等待批次中最長的請求時，其他位置空轉", "tokenize 的開銷", "prefix caching 太多"]
+    answer: 1
+    explain:
+      en: "Finished requests can't be replaced until the whole batch completes."
+      zh: "完成的請求在整批結束前，沒辦法被替換掉。"
+  - id: q-e09-2
+    episode: E09
+    q: {en: "Continuous batching re-decides batch membership…", zh: "Continuous batching 多久重新決定一次批次成員？"}
+    options:
+      en: ["Once per request", "Every iteration (forward step)", "Once per minute", "Only when the GPU is idle"]
+      zh: ["每個請求一次", "每個迭代（每次 forward）", "每分鐘一次", "只有 GPU 閒置時"]
+    answer: 1
+    explain:
+      en: "That's why it's also called iteration-level scheduling (Orca, OSDI 2022)."
+      zh: "所以它也叫做 iteration-level scheduling（Orca，OSDI 2022）。"
+  - id: q-e09-3
+    episode: E09
+    q: {en: "With continuous batching, what usually limits how many requests run at once?", zh: "使用 continuous batching 時，通常是什麼限制同時能跑多少請求？"}
+    options:
+      en: ["The tokenizer", "Free KV cache blocks (and max_num_seqs)", "The HTTP server", "The number of CPU cores"]
+      zh: ["Tokenizer", "空閒的 KV cache block（以及 max_num_seqs）", "HTTP 伺服器", "CPU 核心數"]
+    answer: 1
+    explain:
+      en: "Admission needs KV space; when it runs out, vLLM stops admitting or preempts."
+      zh: "進場需要 KV 空間；用完時，vLLM 會停止接收新請求或進行搶占。"
+  - id: q-e10-1
+    episode: E10
+    q: {en: "vLLM's prefix-cache block hash includes the parent block's hash so that…", zh: "vLLM 的 prefix cache 在 block hash 中包含上一個 block 的 hash，目的是…"}
+    options:
+      en: ["Hashing is faster", "A block only matches if everything before it also matched", "Blocks can be reordered", "It saves memory"]
+      zh: ["讓 hash 更快", "只有前面所有內容都相同時，這個 block 才會命中", "讓 block 可以重新排序", "節省記憶體"]
+    answer: 1
+    explain:
+      en: "KV depends on all previous tokens, so identical block contents with different history are not reusable."
+      zh: "KV 取決於所有之前的 token；內容相同但歷史不同的 block 不能重複使用。"
+  - id: q-e10-2
+    episode: E10
+    q: {en: "To maximize prefix-cache hits, structure prompts as…", zh: "要讓 prefix cache 命中率最高，prompt 應該怎麼排？"}
+    options:
+      en: ["User question first, system prompt last", "Stable shared content first, per-user content last", "Random order", "Put a timestamp at the very start"]
+      zh: ["使用者問題放前面、system prompt 放最後", "穩定共用的內容放前面、每個使用者不同的內容放後面", "隨機排序", "在最前面放時間戳記"]
+    answer: 1
+    explain:
+      en: "One differing token early breaks every block after it. A timestamp at the start kills caching."
+      zh: "前面只要有一個 token 不同，後面所有 block 都會失效。開頭放時間戳記等於關掉快取。"
+  - id: q-e10-3
+    episode: E10
+    q: {en: "Which blocks are eligible for prefix caching in vLLM?", zh: "在 vLLM 中，哪些 block 可以被 prefix cache？"}
+    options:
+      en: ["Any block, including partial ones", "Only full blocks", "Only the first block", "Only decode blocks"]
+      zh: ["任何 block，包含沒填滿的", "只有填滿的 block", "只有第一個 block", "只有 decode 的 block"]
+    answer: 1
+    explain:
+      en: "Partial blocks are still being written, so their identity isn't final."
+      zh: "沒填滿的 block 還在寫入中，身分還沒確定。"
+  - id: q-e11-1
+    episode: E11
+    q: {en: "What problem does chunked prefill solve?", zh: "Chunked prefill 解決什麼問題？"}
+    options:
+      en: ["Model too large for one GPU", "A long prompt monopolizing steps and stalling other users' decodes", "Tokenizer errors", "Low accuracy"]
+      zh: ["模型太大放不進一張 GPU", "長 prompt 佔據好幾個步驟，讓其他使用者的 decode 卡住", "Tokenizer 錯誤", "準確度太低"]
+    answer: 1
+    explain:
+      en: "Splitting the prefill keeps every step mixed with decodes, so ITL stays smooth."
+      zh: "把 prefill 切開，讓每一步都混著 decode，ITL 就能保持平順。"
+  - id: q-e11-2
+    episode: E11
+    q: {en: "Which vLLM setting is the per-step token budget?", zh: "vLLM 中哪個設定是每一步的 token 預算？"}
+    options:
+      en: ["max_model_len", "max_num_batched_tokens", "gpu_memory_utilization", "block_size"]
+      zh: ["max_model_len", "max_num_batched_tokens", "gpu_memory_utilization", "block_size"]
+    answer: 1
+    explain:
+      en: "The scheduler starts each step with token_budget = max_num_batched_tokens (scheduler.py)."
+      zh: "排程器每一步開始時 token_budget = max_num_batched_tokens（見 scheduler.py）。"
+  - id: q-e11-3
+    episode: E11
+    q: {en: "Chunked prefill typically trades…", zh: "Chunked prefill 通常是用什麼換什麼？"}
+    options:
+      en: ["Accuracy for speed", "Slightly higher TTFT for the long request vs smoother ITL for everyone", "Memory for accuracy", "Nothing, it's free"]
+      zh: ["用準確度換速度", "長請求的 TTFT 稍微變高，換來所有人更平順的 ITL", "用記憶體換準確度", "什麼都不用換，完全免費"]
+    answer: 1
+    explain:
+      en: "The big prompt finishes prefill over more steps, while decoders keep getting tokens."
+      zh: "大 prompt 要花更多步驟完成 prefill，而 decode 中的請求持續拿到 token。"
+  - id: q-e12-1
+    episode: E12
+    q: {en: "A core correctness test for an incremental KV engine compares…", zh: "增量 KV 引擎的核心正確性測試，比較的是…"}
+    options:
+      en: ["Speed vs a GPU", "Cached logits vs dense (recompute-everything) logits", "Memory usage vs vLLM", "Tokenizer output vs HF"]
+      zh: ["和 GPU 的速度", "有快取的 logits vs dense（全部重算）的 logits", "和 vLLM 的記憶體用量", "和 HF 的 tokenizer 輸出"]
+    answer: 1
+    explain:
+      en: "If caching is correct, the outputs must match the dense reference within tolerance, across chunk boundaries."
+      zh: "如果快取正確，輸出必須在容許誤差內與 dense 參考一致，跨 chunk 邊界也一樣。"
+  - id: q-e12-2
+    episode: E12
+    q: {en: "Which bug would a 'no leaked blocks after close()' test catch?", zh: "「close() 之後沒有遺漏的 block」這個測試能抓到哪種 bug？"}
+    options:
+      en: ["Wrong sampling temperature", "Forgetting to release blocks when a request is cancelled", "Slow attention", "Wrong vocabulary size"]
+      zh: ["抽樣溫度錯誤", "取消請求時忘了釋放 block", "Attention 太慢", "詞表大小錯誤"]
+    answer: 1
+    explain:
+      en: "Lifecycle bugs are invisible in happy-path tests but drain memory in production."
+      zh: "生命週期 bug 在一般路徑測試看不出來，但在生產環境會慢慢耗光記憶體。"
+  # ---------------- S3 ----------------
+  - id: q-e13-1
+    episode: E13
+    q: {en: "In vLLM V1, the API server and the engine core communicate via…", zh: "在 vLLM V1 中，API server 與 engine core 透過什麼溝通？"}
+    options:
+      en: ["Shared Python objects in one thread", "ZMQ between separate processes", "HTTP calls to localhost", "Files on disk"]
+      zh: ["同一個執行緒裡的共用 Python 物件", "不同行程之間的 ZMQ", "對 localhost 發 HTTP 請求", "磁碟上的檔案"]
+    answer: 1
+    explain:
+      en: "Separating processes keeps tokenization and HTTP work from blocking the GPU loop."
+      zh: "分成不同行程，讓 tokenize 與 HTTP 工作不會擋住 GPU 迴圈。"
+  - id: q-e13-2
+    episode: E13
+    q: {en: "Which component decides how many tokens each request processes in a step?", zh: "哪個元件決定每個請求在一步中處理幾個 token？"}
+    options:
+      en: ["The tokenizer", "The Scheduler", "The Sampler", "The attention backend"]
+      zh: ["Tokenizer", "Scheduler", "Sampler", "Attention backend"]
+    answer: 1
+    explain:
+      en: "Scheduler.schedule() produces a SchedulerOutput with per-request token counts."
+      zh: "Scheduler.schedule() 產出一個 SchedulerOutput，裡面有每個請求的 token 數。"
+  - id: q-e13-3
+    episode: E13
+    q: {en: "Where does incremental detokenization happen?", zh: "增量 detokenize 在哪裡發生？"}
+    options:
+      en: ["Inside the attention kernel", "In the output path (OutputProcessor / detokenizer), on the frontend side", "In the KV cache manager", "On the client only"]
+      zh: ["在 attention kernel 裡", "在輸出路徑（OutputProcessor / detokenizer），前端那一側", "在 KV cache manager", "只在客戶端"]
+    answer: 1
+    explain:
+      en: "Token IDs come back from the engine core; the frontend turns them into text for streaming."
+      zh: "Token ID 從 engine core 回來；前端把它們轉成文字再串流出去。"
+  - id: q-e14-1
+    episode: E14
+    q: {en: "In Scheduler.schedule(), which requests get tokens first?", zh: "在 Scheduler.schedule() 裡，哪些請求先拿到 token？"}
+    options:
+      en: ["Waiting requests", "Running requests", "The longest prompts", "Random requests"]
+      zh: ["等待中的請求", "正在執行的請求", "最長的 prompt", "隨機的請求"]
+    answer: 1
+    explain:
+      en: "The loop over self.running comes first; waiting requests are admitted with what's left."
+      zh: "先跑 self.running 的迴圈；等待中的請求用剩下的預算進場。"
+  - id: q-e14-2
+    episode: E14
+    q: {en: "What happens if KV allocation fails for a running request?", zh: "如果某個執行中的請求配置 KV 失敗，會發生什麼事？"}
+    options:
+      en: ["The server crashes", "A request is preempted: its blocks are freed and it's recomputed later", "The request silently drops tokens", "vLLM allocates CPU memory automatically"]
+      zh: ["伺服器當掉", "某個請求被搶占：釋放它的 block，之後再重新計算", "請求默默丟掉 token", "vLLM 自動配置 CPU 記憶體"]
+    answer: 1
+    explain:
+      en: "See _preempt_request in scheduler.py."
+      zh: "請看 scheduler.py 裡的 _preempt_request。"
+  - id: q-e14-3
+    episode: E14
+    q: {en: "Why can the scheduler be unit-tested on a CPU?", zh: "為什麼排程器可以在 CPU 上做單元測試？"}
+    options:
+      en: ["It's written in C++", "SchedulerOutput holds bookkeeping (IDs, token counts, block IDs), not tensors", "It's never tested", "It uses a CPU attention backend"]
+      zh: ["它是用 C++ 寫的", "SchedulerOutput 只有帳本資料（ID、token 數、block ID），沒有 tensor", "它從來不測試", "它使用 CPU attention backend"]
+    answer: 1
+    explain:
+      en: "Keeping tensors out of the scheduler is a deliberate design boundary."
+      zh: "讓 tensor 不進入排程器，是刻意設計的邊界。"
+  - id: q-e15-1
+    episode: E15
+    q: {en: "Why does vLLM capture CUDA graphs for decode?", zh: "為什麼 vLLM 要替 decode 擷取 CUDA graph？"}
+    options:
+      en: ["To save GPU memory", "To cut CPU kernel-launch overhead on short decode steps", "To improve accuracy", "To enable tensor parallelism"]
+      zh: ["節省 GPU 記憶體", "降低短 decode 步驟中 CPU 發射 kernel 的開銷", "提高準確度", "啟用 tensor parallel"]
+    answer: 1
+    explain:
+      en: "Replaying a captured graph launches the whole step at once instead of hundreds of separate kernels."
+      zh: "重播擷取好的 graph，可以一次發射整個步驟，而不是幾百個獨立的 kernel。"
+  - id: q-e15-2
+    episode: E15
+    q: {en: "Which file chooses the attention backend?", zh: "哪個檔案負責選擇 attention backend？"}
+    options:
+      en: ["vllm/v1/attention/selector.py", "vllm/entrypoints/llm.py", "vllm/v1/core/block_pool.py", "vllm/sampling_params.py"]
+      zh: ["vllm/v1/attention/selector.py", "vllm/entrypoints/llm.py", "vllm/v1/core/block_pool.py", "vllm/sampling_params.py"]
+    answer: 0
+    explain:
+      en: "get_attn_backend() picks a backend based on platform, dtype, model and config."
+      zh: "get_attn_backend() 依平台、dtype、模型與設定挑選 backend。"
+  - id: q-e15-3
+    episode: E15
+    q: {en: "Where does platform-specific logic for CUDA, ROCm, XPU, TPU and CPU live?", zh: "CUDA、ROCm、XPU、TPU、CPU 的平台專屬邏輯放在哪裡？"}
+    options:
+      en: ["vllm/platforms/", "vllm/tokenizers/", "vllm/entrypoints/openai/", "tests/"]
+      zh: ["vllm/platforms/", "vllm/tokenizers/", "vllm/entrypoints/openai/", "tests/"]
+    answer: 0
+    explain:
+      en: "Out-of-tree hardware plugins hook into the same platform interface."
+      zh: "Out-of-tree 硬體外掛也接到同一個平台介面。"
+  - id: q-e16-1
+    episode: E16
+    q: {en: "What does vllm/model_executor/models/registry.py map?", zh: "vllm/model_executor/models/registry.py 對應的是什麼？"}
+    options:
+      en: ["GPU types to kernels", "Hugging Face architecture names to vLLM model modules and classes", "Users to API keys", "Tokens to strings"]
+      zh: ["GPU 型號對應 kernel", "Hugging Face 架構名稱對應 vLLM 的模型模組與類別", "使用者對應 API key", "Token 對應字串"]
+    answer: 1
+    explain:
+      en: "e.g. \"LlamaForCausalLM\" → (\"llama\", \"LlamaForCausalLM\")."
+      zh: "例如 \"LlamaForCausalLM\" → (\"llama\", \"LlamaForCausalLM\")。"
+  - id: q-e16-2
+    episode: E16
+    q: {en: "Your new model matches HF at TP=1 but breaks at TP=2. Most likely culprit?", zh: "你的新模型在 TP=1 時與 HF 一致，TP=2 時壞掉。最可能的原因？"}
+    options:
+      en: ["Wrong tokenizer", "Weight sharding or loading for parallel layers (e.g. fused QKV split, head partitioning)", "Wrong temperature", "The GPU is too old"]
+      zh: ["Tokenizer 錯了", "平行層的權重切分或載入（例如融合 QKV 的切法、head 分配）", "溫度設錯", "GPU 太舊"]
+    answer: 1
+    explain:
+      en: "TP-only bugs usually come from how weights or heads are partitioned across ranks."
+      zh: "只在 TP 出現的 bug，通常來自權重或 head 在各 rank 之間的切分方式。"
+  # ---------------- S4 ----------------
+  - id: q-e17-1
+    episode: E17
+    q: {en: "Why can the target model verify k drafted tokens almost as cheaply as generating one?", zh: "為什麼目標模型驗證 k 個草稿 token 的成本，幾乎和生成一個一樣？"}
+    options:
+      en: ["Verification skips attention", "Decode is memory-bound, so scoring a few extra positions per weight load is nearly free", "Drafted tokens are pre-cached", "The draft model runs on the CPU"]
+      zh: ["驗證時跳過 attention", "Decode 受限於記憶體，每次載入權重時多算幾個位置幾乎不花成本", "草稿 token 已經預先快取", "草稿模型在 CPU 上跑"]
+    answer: 1
+    explain:
+      en: "Same weight bytes moved, slightly more math, and there's plenty of idle compute in decode."
+      zh: "搬的權重 bytes 一樣，只多一點運算，而 decode 本來就有很多閒置算力。"
+  - id: q-e17-2
+    episode: E17
+    q: {en: "With proper rejection sampling, speculative decoding's output distribution is…", zh: "使用正確的 rejection sampling 時，speculative decoding 的輸出分布會…"}
+    options:
+      en: ["Slightly worse than the target model", "Identical to the target model", "Identical to the draft model", "Random"]
+      zh: ["比目標模型稍差", "與目標模型完全相同", "與草稿模型完全相同", "隨機"]
+    answer: 1
+    explain:
+      en: "It's lossless by construction; only speed depends on the acceptance rate."
+      zh: "它在設計上就是無損的；只有速度取決於接受率。"
+  - id: q-e17-3
+    episode: E17
+    q: {en: "When does speculative decoding help least?", zh: "Speculative decoding 什麼時候幫助最小？"}
+    options:
+      en: ["Single-user chat", "Very large batches that are already compute-bound", "Code editing with repetitive text", "Low-latency agents"]
+      zh: ["單一使用者聊天", "已經受限於算力的超大 batch", "有大量重複文字的程式碼編輯", "低延遲 agent"]
+    answer: 1
+    explain:
+      en: "At high batch there's no spare compute, so rejected drafts become wasted work."
+      zh: "大 batch 時沒有多餘的算力，被拒絕的草稿就變成浪費的工作。"
+  - id: q-e18-1
+    episode: E18
+    q: {en: "Weight-only 4-bit quantization mainly speeds up…", zh: "只量化權重到 4 bit，主要加速的是…"}
+    options:
+      en: ["Memory-bound decode", "Tokenization", "Network I/O", "Disk loading only"]
+      zh: ["受限於記憶體的 decode", "Tokenize", "網路 I/O", "只有從磁碟載入"]
+    answer: 0
+    explain:
+      en: "Fewer bytes per weight streamed each step; the math still runs in higher precision."
+      zh: "每一步要搬的權重 bytes 變少；運算本身仍以較高精度執行。"
+  - id: q-e18-2
+    episode: E18
+    q: {en: "What's the right way to validate a quantized model before shipping?", zh: "上線前驗證量化模型的正確方式是？"}
+    options:
+      en: ["Check it loads", "Task-level evals on your workload plus benchmarks at production batch sizes", "Compare file sizes", "Ask it if it feels quantized"]
+      zh: ["確認它能載入", "在你的工作負載上做任務層級評測，並在生產 batch size 下做 benchmark", "比較檔案大小", "問模型它覺得自己有沒有被量化"]
+    answer: 1
+    explain:
+      en: "Perplexity can hide task regressions, and low-bit kernels can lose at large batch."
+      zh: "Perplexity 可能掩蓋任務層級的退步，而低位元 kernel 在大 batch 時可能比較慢。"
+  - id: q-e19-1
+    episode: E19
+    q: {en: "Which parallelism needs the fastest interconnect because it all-reduces inside every layer block?", zh: "哪種平行化因為每個區塊都要 all-reduce，所以最需要高速互連？"}
+    options:
+      en: ["Data parallel", "Tensor parallel", "Pipeline parallel", "None of them"]
+      zh: ["Data parallel", "Tensor parallel", "Pipeline parallel", "都不需要"]
+    answer: 1
+    explain:
+      en: "TP splits matrices, so partial results must be combined per block. Keep it within NVLink/xGMI."
+      zh: "TP 切的是矩陣，每個區塊都要合併部分結果。最好留在 NVLink/xGMI 範圍內。"
+  - id: q-e19-2
+    episode: E19
+    q: {en: "Expert parallelism moves tokens to experts using…", zh: "Expert parallelism 用什麼把 token 送到 expert？"}
+    options:
+      en: ["All-reduce", "All-to-all dispatch and combine", "Broadcast only", "Disk"]
+      zh: ["All-reduce", "All-to-all 的 dispatch 與 combine", "只有 broadcast", "磁碟"]
+    answer: 1
+    explain:
+      en: "Each token goes to the ranks holding its routed experts, then results come back."
+      zh: "每個 token 送到持有其被路由 expert 的 rank，結果再送回來。"
+  - id: q-e19-3
+    episode: E19
+    q: {en: "Data parallelism improves…", zh: "Data parallelism 改善的是…"}
+    options:
+      en: ["Single-request latency", "Aggregate throughput", "Model accuracy", "Context length"]
+      zh: ["單一請求延遲", "整體吞吐量", "模型準確度", "Context 長度"]
+    answer: 1
+    explain:
+      en: "Replicas serve different requests in parallel; each request still runs on one replica."
+      zh: "多個副本平行服務不同請求；每個請求仍然只在一個副本上執行。"
+  - id: q-e20-1
+    episode: E20
+    q: {en: "In P/D disaggregation, what is transferred from the prefill instance to the decode instance?", zh: "在 P/D 分離部署中，prefill 實例傳什麼給 decode 實例？"}
+    options:
+      en: ["Model weights", "The request's KV cache", "The tokenizer", "Nothing, they recompute"]
+      zh: ["模型權重", "該請求的 KV cache", "Tokenizer", "什麼都不傳，各自重算"]
+    answer: 1
+    explain:
+      en: "Decode continues from the transferred KV, so the prompt isn't recomputed."
+      zh: "Decode 從傳過來的 KV 繼續，prompt 不必重算。"
+  - id: q-e20-2
+    episode: E20
+    q: {en: "In vLLM, disaggregated KV transfer is implemented through…", zh: "在 vLLM 中，分離部署的 KV 傳輸透過什麼實作？"}
+    options:
+      en: ["KV connectors (KVConnectorBase_V1 subclasses)", "The tokenizer", "The sampler", "CUDA graphs"]
+      zh: ["KV connector（KVConnectorBase_V1 的子類別）", "Tokenizer", "Sampler", "CUDA graph"]
+    answer: 0
+    explain:
+      en: "Examples include NIXL, Mooncake, LMCache and offloading connectors."
+      zh: "例如 NIXL、Mooncake、LMCache 與 offloading connector。"
+  - id: q-e21-1
+    episode: E21
+    q: {en: "KV offloading beats recomputation when…", zh: "什麼情況下 KV offload 比重新計算划算？"}
+    options:
+      en: ["The prompt is 10 tokens long", "Transferring the KV back is faster than re-running prefill", "The GPU has free compute", "Never"]
+      zh: ["Prompt 只有 10 個 token", "把 KV 搬回來比重跑 prefill 更快", "GPU 有空閒算力", "永遠不會"]
+    answer: 1
+    explain:
+      en: "Long, frequently reused contexts (multi-turn, agents, RAG) are the sweet spot."
+      zh: "長且經常重複使用的 context（多輪對話、agent、RAG）是最佳情境。"
+  - id: q-e21-2
+    episode: E21
+    q: {en: "Which tier ordering is from fastest/smallest to slowest/largest?", zh: "哪一個順序是從最快/最小到最慢/最大？"}
+    options:
+      en: ["SSD → CPU DRAM → GPU HBM", "GPU HBM → CPU DRAM → local SSD → remote store", "CPU DRAM → GPU HBM → SSD", "Remote store → GPU HBM → SSD"]
+      zh: ["SSD → CPU DRAM → GPU HBM", "GPU HBM → CPU DRAM → 本機 SSD → 遠端儲存", "CPU DRAM → GPU HBM → SSD", "遠端儲存 → GPU HBM → SSD"]
+    answer: 1
+    explain:
+      en: "Each level down is bigger and cheaper per byte but slower to reach."
+      zh: "每往下一層都更大、每 byte 更便宜，但存取更慢。"
+  - id: q-e22-1
+    episode: E22
+    q: {en: "In RL post-training, the rollout phase is essentially…", zh: "在 RL 後訓練中，rollout 階段本質上是…"}
+    options:
+      en: ["Gradient computation", "Large-scale inference (sampling many answers)", "Data labeling by humans", "Checkpoint saving"]
+      zh: ["計算梯度", "大規模推論（抽樣大量答案）", "人工標註資料", "存 checkpoint"]
+    answer: 1
+    explain:
+      en: "That's why RL frameworks embed inference engines like vLLM."
+      zh: "所以 RL 框架會內嵌 vLLM 這類推論引擎。"
+  - id: q-e22-2
+    episode: E22
+    q: {en: "Why does train–inference numeric mismatch matter in RL?", zh: "為什麼訓練與推論的數值不一致在 RL 中很重要？"}
+    options:
+      en: ["It changes the tokenizer", "Logprob differences bias importance ratios and can destabilize training", "It doesn't matter", "It makes models larger"]
+      zh: ["它會改變 tokenizer", "Logprob 差異會讓 importance ratio 產生偏差，可能讓訓練不穩定", "一點都不重要", "它讓模型變大"]
+    answer: 1
+    explain:
+      en: "The policy that generated the data must match the policy being trained closely."
+      zh: "產生資料的策略，必須和正在訓練的策略非常接近。"
+  # ---------------- S5 ----------------
+  - id: q-e23-1
+    episode: E23
+    q: {en: "Which flag adds the DCO Signed-off-by line vLLM requires?", zh: "哪個參數會加上 vLLM 要求的 DCO Signed-off-by？"}
+    options:
+      en: ["git commit --amend", "git commit -s", "git push -f", "git commit --dco"]
+      zh: ["git commit --amend", "git commit -s", "git push -f", "git commit --dco"]
+    answer: 1
+    explain:
+      en: "-s appends 'Signed-off-by: Your Name <email>'."
+      zh: "-s 會加上「Signed-off-by: 你的名字 <email>」。"
+  - id: q-e23-2
+    episode: E23
+    q: {en: "How do you develop vLLM's Python code without compiling CUDA kernels?", zh: "怎麼在不編譯 CUDA kernel 的情況下開發 vLLM 的 Python 程式碼？"}
+    options:
+      en: ["pip install vllm", "VLLM_USE_PRECOMPILED=1 uv pip install -e .", "python setup.py develop --no-cuda", "It's impossible"]
+      zh: ["pip install vllm", "VLLM_USE_PRECOMPILED=1 uv pip install -e .", "python setup.py develop --no-cuda", "不可能"]
+    answer: 1
+    explain:
+      en: "It installs your checkout in editable mode while reusing prebuilt compiled artifacts."
+      zh: "它以可編輯模式安裝你的原始碼，同時重複使用預先編譯好的產物。"
+  - id: q-e23-3
+    episode: E23
+    q: {en: "Which PR is most likely to be closed quickly?", zh: "哪一種 PR 最可能很快被關掉？"}
+    options:
+      en: ["A bug fix with a failing-then-passing test", "A single-typo PR generated by an agent with no human review", "A new model with HF parity results", "A doc fix bundled with a related feature"]
+      zh: ["附有「先失敗後通過」測試的 bug 修正", "由 agent 產生、沒經過人工審查、只改一個錯字的 PR", "附有與 HF 一致性結果的新模型", "和相關功能一起修正的文件"]
+    answer: 1
+    explain:
+      en: "vLLM's contribution policy explicitly rejects busywork and pure-agent PRs."
+      zh: "vLLM 的貢獻政策明確拒絕湊數 PR 與純 agent PR。"
+  - id: q-e24-1
+    episode: E24
+    q: {en: "TTFT mostly reflects…", zh: "TTFT 主要反映的是…"}
+    options:
+      en: ["Queueing plus prefill time", "Decode speed only", "Model accuracy", "Detokenization"]
+      zh: ["排隊加上 prefill 時間", "只有 decode 速度", "模型準確度", "反 tokenize"]
+    answer: 0
+    explain:
+      en: "It's the time until the user sees the first output token."
+      zh: "就是使用者看到第一個輸出 token 之前的時間。"
+  - id: q-e24-2
+    episode: E24
+    q: {en: "Why report p99 instead of only the mean?", zh: "為什麼要回報 p99，而不是只報平均值？"}
+    options:
+      en: ["It's always smaller", "Tail latency is what unlucky users experience, and the mean hides it", "Means are illegal", "p99 is easier to compute"]
+      zh: ["它一定比較小", "尾端延遲是運氣不好的使用者實際感受到的，平均值會把它藏起來", "平均值不合法", "p99 比較好算"]
+    answer: 1
+    explain:
+      en: "SLOs are written on percentiles for exactly this reason."
+      zh: "SLO 就是因為這樣才用百分位數來定義。"
+  - id: q-e24-3
+    episode: E24
+    q: {en: "Running the same benchmark twice against one server can inflate results because of…", zh: "對同一個伺服器跑兩次同樣的 benchmark，結果可能被灌水，原因是…"}
+    options:
+      en: ["GPU warm-up only", "Prefix-cache hits from prompts left over from the first run", "Network caching", "Python bytecode caching"]
+      zh: ["只是 GPU 暖機", "第一次跑留在 prefix cache 裡的 prompt 造成命中", "網路快取", "Python bytecode 快取"]
+    answer: 1
+    explain:
+      en: "Vary the seed, restart the server, or reset caches between runs when reuse isn't intended."
+      zh: "如果不是刻意要重複使用，每次之間要換 seed、重啟伺服器或重設快取。"
+  - id: q-e25-1
+    episode: E25
+    q: {en: "In an LLM-serving design interview, what should come right after clarifying requirements?", zh: "在 LLM 服務的設計面試中，釐清需求之後下一步應該做什麼？"}
+    options:
+      en: ["Pick a vector database", "Memory math: weights + KV × context × concurrency", "Write Kubernetes YAML", "Choose a frontend framework"]
+      zh: ["挑一個向量資料庫", "記憶體計算：權重 + KV × context × 並行數", "寫 Kubernetes YAML", "選前端框架"]
+    answer: 1
+    explain:
+      en: "Memory sets the minimum hardware and parallelism; everything else builds on it."
+      zh: "記憶體決定最少需要的硬體與平行策略；其他一切都建立在它之上。"
+  - id: q-e26-1
+    episode: E26
+    q: {en: "Which resume bullet is strongest?", zh: "哪一條履歷條目最有力？"}
+    options:
+      en: ["Familiar with vLLM", "Passionate about LLM inference", "Added X to vLLM's scheduler; cut p99 TTFT 18% on a 4k/512 chat workload (PR #…)", "Completed an online course"]
+      zh: ["熟悉 vLLM", "對 LLM 推論充滿熱情", "在 vLLM 排程器加入 X；在 4k/512 聊天工作負載下讓 p99 TTFT 降低 18%（PR #…）", "完成一門線上課程"]
+    answer: 2
+    explain:
+      en: "Verb + what + measured result + context + link."
+      zh: "動詞 + 做了什麼 + 量測結果 + 情境 + 連結。"
+  # ---- S6 Frontier Watch ----
+  - id: q-e27-1
+    episode: E27
+    q: {en: "Compared with a chatbot request, a typical agent turn has…", zh: "跟聊天機器人的請求相比，典型的 agent 回合有…"}
+    options:
+      en: ["A short prompt and a long answer", "A long, mostly repeated prefix and a short output", "No prompt at all", "Only image inputs"]
+      zh: ["短 prompt、長回答", "很長且大多重複的前綴，加上很短的輸出", "完全沒有 prompt", "只有圖片輸入"]
+    answer: 1
+    explain:
+      en: "System prompt + tool schemas + history come back every turn; the output is often a single tool call."
+      zh: "System prompt + 工具定義 + 歷史每回合都會再出現；輸出常常只是一個工具呼叫。"
+  - id: q-e27-2
+    episode: E27
+    q: {en: "An agent pauses 20 s for a tool, then returns with its 100k-token context. What avoids re-prefilling everything?", zh: "Agent 為了一個工具暫停 20 秒，接著帶著 10 萬 token 的 context 回來。怎樣能避免全部重新 prefill？"}
+    options:
+      en: ["A bigger max_tokens", "Keeping its KV blocks reachable, e.g. offloaded to CPU/SSD, plus prefix-cache lookup", "Turning off prefix caching", "Lowering the temperature"]
+      zh: ["把 max_tokens 調大", "讓它的 KV block 還找得到（例如 offload 到 CPU/SSD），再加上 prefix cache 查找", "關掉 prefix caching", "調低 temperature"]
+    answer: 1
+    explain:
+      en: "Recomputing 100k tokens costs seconds of GPU time; loading cached KV back is usually far cheaper."
+      zh: "重新計算 10 萬個 token 要花好幾秒 GPU 時間；把快取的 KV 載回來通常便宜得多。"
+  - id: q-e27-3
+    episode: E27
+    q: {en: "Why do agentic benchmarks report throughput 'at 150 tok/s per user'?", zh: "為什麼 agent benchmark 要回報「每位使用者 150 tok/s 下」的吞吐量？"}
+    options:
+      en: ["It's a marketing number", "Max throughput at any latency hides how slow each agent becomes; a per-user floor measures useful capacity", "Agents can't read faster than 150 tok/s", "It's required by the OpenAI API"]
+      zh: ["那只是行銷數字", "不限延遲的最大吞吐量會掩蓋每個 agent 變得多慢；設定每人下限才量得出有用的容量", "Agent 讀不了超過 150 tok/s", "OpenAI API 規定的"]
+    answer: 1
+    explain:
+      en: "It's goodput thinking: capacity that still meets the speed users (or agents) need."
+      zh: "這就是 goodput 的思維：在仍符合使用者（或 agent）所需速度下的容量。"
+  - id: q-e28-1
+    episode: E28
+    q: {en: "Which is NOT part of a vLLM engine's startup?", zh: "下列哪一項「不是」vLLM 引擎啟動的一部分？"}
+    options:
+      en: ["Loading weights onto the GPU", "Capturing CUDA graphs", "Profiling memory to size the KV cache", "Fine-tuning the model on your prompts"]
+      zh: ["把權重載入 GPU", "擷取 CUDA graph", "量測記憶體以決定 KV cache 大小", "用你的 prompt 微調模型"]
+    answer: 3
+    explain:
+      en: "Startup is fetch → load/quantize → profile + compile → KV allocation → CUDA-graph capture. No training happens."
+      zh: "啟動流程是 取得 → 載入／量化 → 量測 + 編譯 → 配置 KV → 擷取 CUDA graph。不會做任何訓練。"
+  - id: q-e28-2
+    episode: E28
+    q: {en: "What does `vllm preload` (v0.31) keep alive across engine restarts?", zh: "`vllm preload`（v0.31）在引擎重啟之間讓什麼保持存活？"}
+    options:
+      en: ["The HTTP connections", "Post-quantized weights resident in GPU memory", "The KV cache of every user", "The Python interpreter"]
+      zh: ["HTTP 連線", "常駐在 GPU 記憶體中的量化後權重", "每個使用者的 KV cache", "Python 直譯器"]
+    answer: 1
+    explain:
+      en: "A per-GPU daemon owns the weights so a restarted engine maps them in instead of reloading."
+      zh: "每張 GPU 上的常駐程式持有權重，重啟的引擎直接映射進來，不用重新載入。"
+  - id: q-e28-3
+    episode: E28
+    q: {en: "The main cost of keeping weights resident for fast scale-up is…", zh: "為了快速擴展而讓權重常駐，主要代價是…"}
+    options:
+      en: ["Worse output quality", "GPU memory held by idle weights that could serve something else", "Slower decode", "It breaks prefix caching"]
+      zh: ["輸出品質變差", "閒置權重佔住的 GPU 記憶體，本來可以拿去服務別的東西", "Decode 變慢", "會破壞 prefix caching"]
+    answer: 1
+    explain:
+      en: "Residency trades memory for startup time. Burstier traffic makes the trade more worthwhile."
+      zh: "常駐是用記憶體換啟動時間。流量越突發，這筆交易越划算。"
+  # ---- round 2: every episode gets at least 3 questions ----
+  - id: q-e04-3
+    episode: E04
+    q: {en: "Why is inference, not training, the bigger long-run compute bill for a popular model?", zh: "對一個熱門模型來說，為什麼長期最大的算力帳單是推論，而不是訓練？"}
+    options:
+      en: ["Inference uses FP64", "Training happens once; inference runs every time any user sends a request", "Inference can't be batched", "Training is free on TPUs"]
+      zh: ["推論用 FP64", "訓練只做一次；推論在每個使用者每次送出請求時都會執行", "推論無法批次處理", "在 TPU 上訓練是免費的"]
+    answer: 1
+    explain:
+      en: "Usage scales with users × requests × tokens, for the whole life of the product."
+      zh: "用量會隨著 使用者 × 請求 × token 成長，而且持續整個產品生命週期。"
+  - id: q-e12-3
+    episode: E12
+    q: {en: "A mutation (a deliberately injected bug) survives the whole test suite. What does that tell you?", zh: "一個刻意植入的 bug（mutation）通過了整個測試套件。這代表什麼？"}
+    options:
+      en: ["The engine is correct", "There's a coverage gap: add a test for the invariant it broke", "Delete the mutation and move on", "pytest is broken"]
+      zh: ["引擎是正確的", "測試有漏洞：要為它破壞的不變量補上測試", "刪掉這個 mutation 繼續做", "pytest 壞了"]
+    answer: 1
+    explain:
+      en: "Mutation testing measures your tests, not your code. A surviving mutant is a missing assertion."
+      zh: "Mutation testing 量的是你的測試，不是你的程式碼。存活的 mutant 就是少了一個 assertion。"
+  - id: q-e16-3
+    episode: E16
+    q: {en: "Before opening a new-model PR, the most convincing correctness evidence is…", zh: "在送出新模型的 PR 之前，最有說服力的正確性證據是…"}
+    options:
+      en: ["It runs without crashing", "Logits or greedy outputs match the Hugging Face reference on fixed prompts, at TP=1 and TP>1", "A high tokens/s number", "The model card says it works"]
+      zh: ["跑起來不會當掉", "在固定 prompt 上，logits 或 greedy 輸出與 Hugging Face 參考實作一致，TP=1 與 TP>1 都要", "很高的 tokens/s", "模型卡說可以用"]
+    answer: 1
+    explain:
+      en: "Fast and wrong is worse than slow. Match the reference first, then optimize."
+      zh: "又快又錯比慢還糟。先和參考實作對齊，再談最佳化。"
+  - id: q-e18-3
+    episode: E18
+    q: {en: "Switching the KV cache from BF16 to FP8 (same model, same GPU) mainly gives you…", zh: "把 KV cache 從 BF16 換成 FP8（同模型、同 GPU），主要帶來的是…"}
+    options:
+      en: ["Smaller weights", "About 2× more KV capacity, so more concurrent sequences or longer contexts", "Faster tokenization", "Better accuracy"]
+      zh: ["權重變小", "KV 容量大約變 2 倍，可以放更多並行序列或更長的 context", "斷詞更快", "準確度更好"]
+    answer: 1
+    explain:
+      en: "KV bytes per token halve. Try it with /kvcalc kv_dtype:fp8, then check quality on your task."
+      zh: "每個 token 的 KV bytes 減半。用 /kvcalc kv_dtype:fp8 試試，然後在你的任務上檢查品質。"
+  - id: q-e20-3
+    episode: E20
+    q: {en: "vLLM's P/D guide measured 2×L40S over PCIe without peer-to-peer. What got worse with P/D?", zh: "vLLM 的 P/D 指南在 2 張 L40S、走 PCIe 且沒有 P2P 的環境下實測。用了 P/D 之後什麼變差了？"}
+    options:
+      en: ["p99 inter-token latency", "Median TTFT, because each KV transfer took ~1.3 s", "Output quality", "Nothing"]
+      zh: ["p99 inter-token latency", "中位數 TTFT，因為每次 KV 傳輸要約 1.3 秒", "輸出品質", "沒有任何東西變差"]
+    answer: 1
+    explain:
+      en: "ITL improved a lot (169 → 29 ms p99), but TTFT went 0.7 s → 2.2 s. Fix the fabric before you split."
+      zh: "ITL 大幅改善（p99 169 → 29 ms），但 TTFT 從 0.7 秒變 2.2 秒。拆開之前，先把網路搞定。"
+  - id: q-e21-3
+    episode: E21
+    q: {en: "Which workload benefits MOST from tiered KV offloading?", zh: "哪一種工作負載最能受益於分層 KV offload？"}
+    options:
+      en: ["One-shot short prompts that never repeat", "Multi-turn chats and agents whose long contexts come back after a pause", "Batch embedding jobs", "Image classification"]
+      zh: ["只問一次、從不重複的短 prompt", "多輪對話與 agent，長 context 暫停後還會再回來", "批次 embedding 任務", "圖片分類"]
+    answer: 1
+    explain:
+      en: "Offload only pays off if the KV will be needed again. Returning long contexts are exactly that."
+      zh: "只有 KV 之後還會再用到，offload 才划算。會回來的長 context 正是如此。"
+  - id: q-e22-3
+    episode: E22
+    q: {en: "Why do RL frameworks care so much about fast weight transfer into vLLM?", zh: "為什麼 RL 框架這麼在意把權重快速傳進 vLLM？"}
+    options:
+      en: ["To save disk space", "Every training step produces new weights, and rollouts must use them; slow sync leaves GPUs idle", "vLLM can't load checkpoints from disk", "It improves tokenization"]
+      zh: ["為了省磁碟空間", "每個訓練步驟都會產生新權重，rollout 必須用新權重；同步太慢 GPU 就會閒置", "vLLM 不能從磁碟載入 checkpoint", "它能改善斷詞"]
+    answer: 1
+    explain:
+      en: "Moving Kimi K2's weights across 48 nodes in 7.53 s (Ray Direct Transport) is that problem being solved."
+      zh: "用 Ray Direct Transport 在 7.53 秒內把 Kimi K2 的權重傳到 48 個節點，解決的就是這個問題。"
+  - id: q-e25-2
+    episode: E25
+    q: {en: "The interviewer asks you to 'serve Llama-70B for 1,000 users'. Your first move?", zh: "面試官要你「為 1,000 個使用者服務 Llama-70B」。你的第一步？"}
+    options:
+      en: ["Name your favorite GPU", "Ask clarifying questions: context length, QPS, latency SLOs, budget", "Start writing Kubernetes YAML", "Say 'use vLLM' and stop"]
+      zh: ["說出你最喜歡的 GPU", "先問清楚：context 長度、QPS、延遲 SLO、預算", "開始寫 Kubernetes YAML", "說「用 vLLM」就結束"]
+    answer: 1
+    explain:
+      en: "'1,000 users' could mean 10 or 10,000 concurrent requests. Requirements decide everything that follows."
+      zh: "「1,000 個使用者」可能代表 10 個或 10,000 個並行請求。需求決定後面的一切。"
+  - id: q-e25-3
+    episode: E25
+    q: {en: "Which answer pattern scores best on an inference concept question?", zh: "回答推論觀念題時，哪一種答法分數最高？"}
+    options:
+      en: ["A long list of buzzwords", "Mechanism → a concrete number → the trade-off → when you wouldn't use it", "'It depends' and nothing else", "Reciting the paper abstract"]
+      zh: ["一長串流行術語", "機制 → 一個具體數字 → 取捨 → 什麼時候不該用", "只說「看情況」", "背誦論文摘要"]
+    answer: 1
+    explain:
+      en: "Interviewers listen for understanding plus judgment. The 'when not to' part shows you've actually used it."
+      zh: "面試官要聽的是理解加判斷力。「什麼時候不該用」這部分，證明你真的用過。"
+  - id: q-e26-2
+    episode: E26
+    q: {en: "Which portfolio item is most likely to get you an inference-engineering interview?", zh: "哪一項作品最可能幫你拿到推論工程師的面試？"}
+    options:
+      en: ["A certificate of completion", "A reproducible benchmark write-up with raw data and exact commands", "A list of courses taken", "A screenshot of ChatGPT"]
+      zh: ["一張結業證書", "一份可重現的 benchmark 分析，附原始資料與完整指令", "修過的課程清單", "一張 ChatGPT 截圖"]
+    answer: 1
+    explain:
+      en: "Public, checkable proof beats claims. Q7 produces exactly this."
+      zh: "公開、可驗證的證明勝過空口說白話。Q7 產出的就是這個。"
+  - id: q-e26-3
+    episode: E26
+    q: {en: "You got a small PR merged into vLLM. What's the best way to show it?", zh: "你有一個小 PR 被 merge 進 vLLM 了。最好的展示方式是？"}
+    options:
+      en: ["'Contributor to vLLM' with no link", "A one-line bullet: what you changed, why, the measured effect, and the PR link", "Hide it because it's small", "List every file you touched"]
+      zh: ["寫「vLLM 貢獻者」但不附連結", "一行條列：改了什麼、為什麼、量測到的效果，再加上 PR 連結", "因為太小所以不提", "列出你動到的每個檔案"]
+    answer: 1
+    explain:
+      en: "Small and specific beats big and vague. Reviewers click links."
+      zh: "小而具體，勝過大而模糊。審閱履歷的人會點連結。"

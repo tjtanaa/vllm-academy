@@ -1,0 +1,211 @@
+episodes:
+  - id: E23
+    season: S5
+    minutes: 25
+    title:
+      en: "Your first vLLM PR in 7 steps (without being \"that\" contributor)"
+      zh: "7 步送出你的第一個 vLLM PR（而且不當「那種」貢獻者）"
+    hook:
+      en: "Maintainers love some first PRs and close others within minutes. The difference isn't talent. It's seven habits."
+      zh: "有些第一次的 PR 讓維護者很開心，有些幾分鐘就被關掉。差別不在天分，在七個習慣。"
+    aha:
+      en: |-
+        1. **Pick real work:** a `good first issue`, the onboarding project board, a bug you actually hit, or a model request.
+        2. **Check for duplicates:** read the issue comments and search open PRs first.
+        3. **Set up fast:** `VLLM_USE_PRECOMPILED=1 uv pip install -e .` lets you edit Python without compiling CUDA.
+        4. **Reproduce, then write a failing test.**
+        5. **Make the smallest fix that passes**, then `pre-commit run`.
+        6. **Sign off:** `git commit -s` (DCO is required).
+        7. **Write a reviewable PR:** a tagged title like `[Bugfix][Scheduler] …`, what and why, the exact test commands with results, and an AI-assistance disclosure if you used it.
+
+        Don'ts: one-typo "busywork" PRs; agent-generated PRs you can't defend line by line. vLLM's policy explicitly rejects both.
+      zh: |-
+        1. **挑真正的工作：** `good first issue`、新手專案看板、你真的遇到的 bug，或模型支援請求。
+        2. **先查有沒有重複：** 讀 issue 留言、搜尋開著的 PR。
+        3. **快速建好環境：** `VLLM_USE_PRECOMPILED=1 uv pip install -e .`，不用編譯 CUDA 就能改 Python。
+        4. **先重現，再寫一個會失敗的測試。**
+        5. **做能讓測試通過的最小修改**，接著跑 `pre-commit run`。
+        6. **簽署：** `git commit -s`（必須符合 DCO）。
+        7. **寫一個好審的 PR：** 帶標籤的標題，例如 `[Bugfix][Scheduler] …`；說明做了什麼、為什麼；附上實際執行的測試指令與結果；如果用了 AI 輔助要揭露。
+
+        不要做的事：只改一個錯字的「湊數」PR；你沒辦法逐行解釋的 agent 生成 PR。vLLM 的政策明確拒絕這兩種。
+    tldr:
+      en:
+        - "Real issue → dedupe → precompiled dev install → failing test → minimal fix → `-s` sign-off → reviewable PR."
+        - "Tag the title, include test commands and results, disclose AI assistance."
+        - "No busywork PRs and no pure-agent PRs: you must be able to defend every line."
+      zh:
+        - "真實 issue → 查重 → 預編譯開發安裝 → 失敗的測試 → 最小修改 → `-s` 簽署 → 好審的 PR。"
+        - "標題加標籤、附測試指令與結果、揭露 AI 輔助。"
+        - "不要湊數 PR、不要純 agent PR：每一行你都要能解釋。"
+    pro:
+      en: "My process for a first contribution: pick a reproducible issue, confirm nobody's already on it, reproduce it locally with a minimal script, encode it as a failing test, make the narrowest fix, run pre-commit and the relevant test subset, then open a tagged PR with motivation, test evidence and any limitations. I keep the diff small so a busy reviewer can approve it in one sitting, and I respond to review within a day or two."
+      zh: "我第一次貢獻的流程：挑一個可重現的 issue，確認沒人在做，用最小腳本在本機重現，寫成會失敗的測試，做最小範圍的修正，跑 pre-commit 與相關測試，再開一個帶標籤的 PR，寫清楚動機、測試證據與限制。我會讓 diff 保持精簡，讓忙碌的審查者一次就能看完核准，並在一兩天內回覆審查意見。"
+    followup:
+      en: "Your PR has been waiting 10 days without review. What do you do?"
+      zh: "你的 PR 等了 10 天都沒人審。你會怎麼做？"
+    lab: Q8
+    lab_hint:
+      en: "Do Q8 up to step 5 this week. Ask for help in #labs-help, and post your draft PR link in #show-your-work."
+      zh: "這週把 Q8 做到第 5 步。有問題到 #labs-help 問，草稿 PR 連結貼到 #show-your-work。"
+    deep_dive: course/part4/17-contributing.md
+    code: [contributing]
+  - id: E24
+    season: S5
+    minutes: 20
+    title:
+      en: "Benchmark like a pro: TTFT, ITL and the lie of averages"
+      zh: "像專家一樣做 benchmark：TTFT、ITL 與平均值的謊言"
+    hook:
+      en: "\"It's 2× faster\" means nothing. Faster at what metric, which percentile, which workload, which request rate, against which baseline? Learn the five numbers that matter."
+      zh: "「快了 2 倍」等於什麼都沒說。哪個指標？哪個百分位數？什麼工作負載？什麼請求速率？跟什麼比？學會真正重要的五個數字。"
+    aha:
+      en: |-
+        - **TTFT** (time to first token): queueing + prefill. It's what users feel as "it started answering".
+        - **ITL / TPOT** (inter-token latency, time per output token): smoothness of streaming.
+        - **E2E latency** = TTFT + output tokens × TPOT (roughly).
+        - **Throughput:** requests/s and output tokens/s at a given load.
+        - **Goodput:** throughput that still meets your SLOs.
+
+        Always report **p50/p90/p99**, not just the mean. One stalled request in a hundred is invisible in an average and very visible to a user.
+
+        Pin everything: vLLM version, flags, model, GPU, dataset, input/output lengths, request rate or concurrency, warm vs cold prefix cache, number of runs. `vllm bench serve` gives you most of this.
+      zh: |-
+        - **TTFT**（首個 token 時間）：排隊 + prefill。也就是使用者感覺到的「它開始回答了」。
+        - **ITL／TPOT**（token 間延遲、每個輸出 token 的時間）：串流的順暢度。
+        - **E2E 延遲** ≈ TTFT + 輸出 token 數 × TPOT。
+        - **吞吐量：** 在特定負載下的每秒請求數與每秒輸出 token 數。
+        - **Goodput：** 仍然符合 SLO 的吞吐量。
+
+        一定要回報 **p50/p90/p99**，不能只看平均值。一百個請求裡有一個卡住，在平均值裡看不出來，但使用者看得非常清楚。
+
+        把所有東西都固定下來：vLLM 版本、參數、模型、GPU、資料集、輸入/輸出長度、請求速率或並行數、prefix cache 是冷是熱、跑了幾次。`vllm bench serve` 能幫你處理大部分。
+    tldr:
+      en:
+        - "TTFT = responsiveness; ITL/TPOT = streaming smoothness; throughput and goodput = capacity."
+        - "Report percentiles (p50/p90/p99), never just averages."
+        - "A benchmark without pinned versions, workload and load level isn't reproducible."
+      zh:
+        - "TTFT = 回應速度；ITL/TPOT = 串流順暢度；吞吐量與 goodput = 容量。"
+        - "回報百分位數（p50/p90/p99），不要只給平均。"
+        - "沒有固定版本、工作負載與負載水準的 benchmark，無法重現。"
+    pro:
+      en: "I benchmark with a fixed, realistic workload: input/output length distributions, an arrival process or fixed concurrency, and warm vs cold cache stated explicitly. I sweep request rate to get the latency-throughput curve and report TTFT and ITL at p50/p90/p99 plus goodput under an SLO. Versions, flags and hardware are pinned and every config is run multiple times. Any claim names the baseline and the regime, because a win at low load can be a loss at high load."
+      zh: "我用固定且真實的工作負載做 benchmark：輸入/輸出長度分布、到達過程或固定並行數，並明確說明 cache 是冷是熱。掃描請求速率畫出延遲-吞吐量曲線，回報 TTFT 與 ITL 的 p50/p90/p99，以及在 SLO 下的 goodput。版本、參數與硬體全部固定，每個設定跑多次。任何結論都會說明比較基準與適用區間，因為低負載時的勝利，可能是高負載時的失敗。"
+    followup:
+      en: "Throughput went up 30% but p99 TTFT doubled. Is that a win?"
+      zh: "吞吐量上升 30%，但 p99 TTFT 變成兩倍。這算贏嗎？"
+    lab: Q7
+    lab_hint:
+      en: "Run Q7: benchmark the same workload with prefix caching on vs off and fill in the report template."
+      zh: "執行 Q7：同一份工作負載，開與不開 prefix caching 各跑一次 benchmark，填好報告範本。"
+    deep_dive: course/part1/05-measurement.md
+    code: [bench]
+  - id: E25
+    season: S5
+    minutes: 30
+    title:
+      en: "The inference-engineer interview, decoded"
+      zh: "推論工程師面試，一次拆解"
+    hook:
+      en: "The same handful of system-design prompts show up again and again: serve a 70B on 4 GPUs, estimate max throughput, handle 200k-token context. Here's the framework that answers all of them."
+      zh: "同樣幾題系統設計反覆出現：用 4 張 GPU 服務 70B、估算最大吞吐量、處理 20 萬 token 的 context。這裡有一套能回答全部的框架。"
+    aha:
+      en: |-
+        Use the same 7-step skeleton for any LLM-serving design question:
+
+        1. **Requirements:** model, QPS, input/output lengths, TTFT/ITL SLOs, cost target.
+        2. **Memory math:** weights + KV per token × context × concurrency (E07).
+        3. **Placement:** which parallelism and how many replicas (E19).
+        4. **Batching and scheduling:** continuous batching, token budget, chunked prefill, priorities (E09, E11).
+        5. **Caching:** prefix caching, cache-aware routing, KV offload (E10, E21).
+        6. **Speed levers:** quantization, speculative decoding, disaggregation (E17, E18, E20).
+        7. **Operate it:** metrics (TTFT/ITL percentiles, KV usage, queue depth), autoscaling, failure modes, rollouts.
+
+        Say numbers out loud. Interviewers remember the candidate who said "about 320 KiB per token, so only three or four 128k sessions per node."
+      zh: |-
+        任何 LLM 服務的系統設計題，都用同一套 7 步驟骨架：
+
+        1. **需求：** 模型、QPS、輸入/輸出長度、TTFT/ITL SLO、成本目標。
+        2. **記憶體計算：** 權重 + 每 token KV × context × 並行數（E07）。
+        3. **配置：** 用哪種平行化、要幾個副本（E19）。
+        4. **批次與排程：** continuous batching、token 預算、chunked prefill、優先權（E09、E11）。
+        5. **快取：** prefix caching、感知快取的路由、KV offload（E10、E21）。
+        6. **加速槓桿：** 量化、推測解碼、分離部署（E17、E18、E20）。
+        7. **營運：** 指標（TTFT/ITL 百分位數、KV 使用率、佇列深度）、自動擴展、故障模式、上線流程。
+
+        把數字說出來。面試官會記得那個說「每個 token 大約 320 KiB，所以一個節點只放得下三到四個 128k session」的人。
+    tldr:
+      en:
+        - "Requirements → memory math → placement → batching → caching → speed levers → operations."
+        - "Quantify everything: bytes per token, GPUs, concurrency, latency budgets."
+        - "Practice out loud with /mock until the skeleton is automatic."
+      zh:
+        - "需求 → 記憶體計算 → 配置 → 批次 → 快取 → 加速槓桿 → 營運。"
+        - "全部量化：每 token bytes、GPU 數、並行數、延遲預算。"
+        - "用 /mock 大聲練習，直到這套骨架變成反射動作。"
+    pro:
+      en: "I start by pinning requirements and SLOs, then do the memory budget: weights plus per-token KV times expected concurrent context. That tells me the minimum GPUs and the parallelism. Next comes the batching and scheduling policy, the caching strategy and routing, then optional levers like quantization, speculative decoding or disaggregation, each justified by which bottleneck it hits. I finish with the metrics and failure modes I'd monitor."
+      zh: "我會先把需求與 SLO 定下來，接著做記憶體預算：權重加上每 token KV 乘以預期的同時 context 量，這決定最少需要幾張 GPU 與平行策略。然後是批次與排程策略、快取策略與路由，再來是量化、推測解碼或分離部署等可選槓桿，每一個都說明它打的是哪個瓶頸。最後說明我會監控的指標與故障模式。"
+    followup:
+      en: "Now traffic triples during the Taiwan evening peak. What changes first?"
+      zh: "現在台灣晚間尖峰流量變成三倍。最先要改的是什麼？"
+    lab: Q9
+    lab_hint:
+      en: "Run `/mock` in Discord. Five questions, rate yourself honestly, review the model answers."
+      zh: "在 Discord 執行 `/mock`。五題，誠實替自己打分數，再看參考答案。"
+    deep_dive: phase1/redesign/lessons/16-measurement.md
+    code: []
+  - id: E26
+    season: S5
+    minutes: 15
+    title:
+      en: "Public proof beats a perfect CV"
+      zh: "公開的證明，勝過完美的履歷"
+    hook:
+      en: "Hiring managers for inference roles look at GitHub before they look at your GPA. A merged PR, an honest benchmark and one good blog post get noticed faster than a certificate."
+      zh: "推論職位的主管會先看你的 GitHub，才看你的成績。一個被 merge 的 PR、一份誠實的 benchmark、一篇好文章，比一張證書更快被看見。"
+    aha:
+      en: |-
+        Build a **proof stack**, smallest first:
+
+        1. **A write-up:** explain one mechanism (PagedAttention, chunked prefill…) with your own diagram and numbers from your Q7 benchmark.
+        2. **A reproducible benchmark:** pinned versions, percentiles, raw data in a repo.
+        3. **An upstream contribution:** a fix, test, model support or doc that maintainers actually needed.
+        4. **A talk:** 5 minutes at a study group, a vLLM meetup or a COSCUP BoF.
+
+        Resume bullets: **verb + what + measured result + context.** "Added X to vLLM's Y; reduced p99 TTFT 18% on Z workload (PR #…)."
+
+        In Taiwan, programs like the TAIONE vLLM Fellowship Track (with Embedded LLM) are set up exactly to mentor people through upstream work.
+      zh: |-
+        打造一組**證明堆疊**，從最小的開始：
+
+        1. **一篇文章：** 用自己的圖和 Q7 benchmark 的數據，解釋一個機制（PagedAttention、chunked prefill…）。
+        2. **一份可重現的 benchmark：** 固定版本、百分位數、原始資料放在 repo 裡。
+        3. **一個上游貢獻：** 維護者真的需要的修正、測試、模型支援或文件。
+        4. **一場分享：** 在讀書會、vLLM meetup 或 COSCUP BoF 講 5 分鐘。
+
+        履歷條目：**動詞 + 做了什麼 + 量測結果 + 情境。**「在 vLLM 的 Y 加入 X；在 Z 工作負載下讓 p99 TTFT 降低 18%（PR #…）。」
+
+        在台灣，像 TAIONE vLLM Fellowship Track（與 Embedded LLM 合作）這樣的計畫，就是專門帶人走完上游貢獻流程的。
+    tldr:
+      en:
+        - "Proof stack: write-up → reproducible benchmark → upstream PR → talk."
+        - "Resume bullets need a measured result and context."
+        - "Use the community: study groups, meetups, fellowships and code review."
+      zh:
+        - "證明堆疊：文章 → 可重現 benchmark → 上游 PR → 分享。"
+        - "履歷條目要有量測結果與情境。"
+        - "善用社群：讀書會、meetup、fellowship 與 code review。"
+    pro:
+      en: "Tell me about a project you're proud of? Use STAR with numbers: the situation (serving bottleneck), the task, the specific action (what you changed and how you validated it), and the measured result with context and a link. Inference interviewers probe depth, so pick something where you can go three 'why?'s deep."
+      zh: "「說說你最自豪的專案？」用 STAR 加上數字：情境（服務瓶頸）、任務、具體行動（改了什麼、怎麼驗證）、量測結果（附情境與連結）。推論面試官會往深處追問，所以選一個你能被連問三次「為什麼？」都答得出來的專案。"
+    followup:
+      en: "What's one thing in vLLM you'd change if you were a maintainer, and why?"
+      zh: "如果你是維護者，你會改 vLLM 的哪一件事？為什麼？"
+    lab: null
+    lab_hint:
+      en: "Fill in `templates/LEARNER_SUBMISSION.md` and post your proof stack in #show-your-work."
+      zh: "填好 `templates/LEARNER_SUBMISSION.md`，把你的證明堆疊貼到 #show-your-work。"
+    deep_dive: ROADMAP.md
+    code: []

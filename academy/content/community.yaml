@@ -1,0 +1,48 @@
+# Community links and events for /community and /events. Moderators: add events by PR.
+links:
+  - {emoji: "🐙", name: {en: "vLLM on GitHub", zh: "vLLM GitHub"}, url: "https://github.com/vllm-project/vllm"}
+  - {emoji: "📚", name: {en: "vLLM docs", zh: "vLLM 文件"}, url: "https://docs.vllm.ai/"}
+  - {emoji: "📰", name: {en: "vLLM blog", zh: "vLLM 部落格"}, url: "https://vllm.ai/blog"}
+  - {emoji: "🔬", name: {en: "Anatomy of vLLM (best deep-dive read)", zh: "Anatomy of vLLM（最佳深度好文）"}, url: "https://vllm.ai/blog/2025-09-05-anatomy-of-vllm"}
+  - {emoji: "💬", name: {en: "vLLM Slack (#pr-reviews, #contributors)", zh: "vLLM Slack（#pr-reviews、#contributors）"}, url: "https://slack.vllm.ai"}
+  - {emoji: "🌱", name: {en: "Good first issues", zh: "Good first issues"}, url: "https://github.com/vllm-project/vllm/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22"}
+  - {emoji: "🧭", name: {en: "Onboarding project board", zh: "新手專案看板"}, url: "https://github.com/orgs/vllm-project/projects/6"}
+  - {emoji: "🎓", name: {en: "vLLM Academy (this course)", zh: "vLLM Academy（本課程）"}, url: "https://github.com/tjtanaa/vllm-academy"}
+
+events:
+  - id: ev-pytorch-conf-2026
+    date: "2026-10-20"
+    status: upcoming
+    title: {en: "PyTorch Conference North America 2026 (vLLM sessions)", zh: "PyTorch Conference North America 2026（vLLM 議程）"}
+    where: {en: "San Jose, USA · 20–21 Oct · watch the recordings later", zh: "美國聖荷西 · 10 月 20–21 日 · 之後可看錄影"}
+    blurb:
+      en: "vLLM sessions on KV cache, disaggregated serving, elastic expert parallelism and 20+ accelerators. Plan a watch party in #events when the recordings drop."
+      zh: "vLLM 議程涵蓋 KV cache、分離部署、彈性 expert parallel，以及 20 多種加速器。錄影上線後，在 #events 揪一場線上一起看。"
+    url: "https://futurumgroup.com/?p=95004"
+  - id: ev-taipei-meetup-2026
+    date: "2026-08-01"
+    status: past
+    title: {en: "vLLM Taipei Meetup", zh: "vLLM 台北聚會"}
+    where: {en: "Taipei New Horizon, 6F Hall B, Xinyi District", zh: "台北文創大樓 6 樓 B 廳（信義區）"}
+    blurb:
+      en: "Talks from Embedded LLM (intro to vLLM; maximizing performance on limited GPUs), Inferact (Kimi K3 support and the Q3 roadmap), Academia Sinica (local LLMs), Twinkle AI (Twinkle Eval with vLLM) and WEKA (extending the KV cache)."
+      zh: "講者來自 Embedded LLM（vLLM 入門；有限 GPU 下的效能最大化）、Inferact（Kimi K3 支援與 Q3 路線圖）、中研院（本地 LLM）、Twinkle AI（用 vLLM 做 Twinkle Eval）以及 WEKA（擴展 KV cache）。"
+    url: "https://luma.com/drqty961"
+  - id: ev-coscup-2026
+    date: "2026-08-08"
+    status: past
+    title: {en: "vLLM BoF @ COSCUP x UbuCon Asia 2026", zh: "COSCUP x UbuCon Asia 2026 vLLM BoF"}
+    where: {en: "Room TR310-2, 11:00–12:00", zh: "TR310-2 教室，11:00–12:00"}
+    blurb:
+      en: "A casual Birds-of-a-Feather session: a vLLM overview, then open discussion on deployments and how to start contributing."
+      zh: "輕鬆的 BoF 交流：先簡介 vLLM，接著自由討論部署經驗與如何開始貢獻。"
+    url: "https://coscup.org/2026/en/session/RJABUB"
+  - id: ev-taione-fellowship
+    date: "2026-08-10"
+    status: announced
+    title: {en: "TAIONE × Embedded LLM: vLLM Fellowship Track", zh: "TAIONE × Embedded LLM：vLLM Fellowship Track"}
+    where: {en: "Taiwan (details to be announced)", zh: "台灣（細節待公布）"}
+    blurb:
+      en: "Mentorship, engineering guidance and code review for upstream vLLM contributions: API/runtime, distributed inference, KV-cache management, kernels, quantization, multimodal, testing/CI and tooling. Application details will be announced jointly."
+      zh: "針對 vLLM 上游貢獻提供導師、工程指導與 code review：API/runtime、分散式推論、KV cache 管理、kernel、量化、多模態、測試/CI 與工具。申請細節將聯合公布。"
+    url: "https://macaubusiness.com/taione-open-source-foundation-and-embedded-llm-collaborate-to-build-taiwans-vllm-ecosystem/"
