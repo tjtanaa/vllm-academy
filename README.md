@@ -16,15 +16,14 @@ Start with Phase 1. Phase 2 explains **why production design changes**. Phase 3 
 
 ## Run the teaching engine
 
-Use a separate CPU sandbox with Python, PyTorch and pytest. No vLLM package, downloaded model, GPU, or API key is needed after dependency installation.
+Use a separate CPU sandbox with Python, PyTorch, Numpy and pytest. No vLLM package, downloaded model, GPU, or API key is needed after dependency installation.
 
 ```bash
 git clone https://github.com/tjtanaa/vllm-academy.git
 cd vllm-academy
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install 'torch==2.10.0' --index-url https://download.pytorch.org/whl/cpu
-python -m pip install 'pytest>=8,<10'
+python -m pip install -r requirement.txt
 python labs/check_course.py
 python labs/check_versions.py
 python -m pytest -q
